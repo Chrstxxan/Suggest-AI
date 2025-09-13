@@ -1,21 +1,17 @@
-# src/recommender.py
 import pandas as pd
+import numpy as np
+from sklearn.metrics import jaccard_score
 
 class InteractiveRecommender:
     def __init__(self, csv_path=None):
-        """
-        Inicializa o recomendador interativo.
-        - csv_path: caminho opcional para CSV inicial com IDs, nomes e filmes
-        """
         self.csv_path = csv_path
-        self.usuarios = {}  # user_id -> {"nome": nome, "filmes": set([...])}
-        self.next_id = 1  # contador de IDs automáticos
+        self.usuarios = {}
+        self.next_id = 1
 
         if csv_path:
             self.load_csv(csv_path)
 
     def load_csv(self, csv_path):
-        """Carrega usuários do CSV inicial"""
         df = pd.read_csv(csv_path)
         for _, row in df.iterrows():
             user_id = int(row['user_id'])
@@ -25,7 +21,6 @@ class InteractiveRecommender:
             self.next_id = max(self.next_id, user_id + 1)
 
     def save_csv(self):
-        """Salva a base atualizada no CSV"""
         if not self.csv_path:
             return
 
@@ -39,9 +34,6 @@ class InteractiveRecommender:
         df.to_csv(self.csv_path, index=False)
 
     def add_user_preferences(self, nome, filmes):
-        """Adiciona usuário novo ou atualiza existentes"""
-        # Verifica se já existe algum usuário com mesmo nome (opcional: permite duplicados)
-        # Sempre cria um novo user_id para simplificar
         user_id = self.next_id
         self.next_id += 1
         self.usuarios[user_id] = {"nome": nome, "filmes": set(filmes)}
@@ -49,7 +41,6 @@ class InteractiveRecommender:
         return user_id
 
     def recommend(self, user_id, top_n=5):
-        """Recomenda filmes para um usuário pelo ID"""
         if user_id not in self.usuarios:
             return []
 
@@ -70,3 +61,39 @@ class InteractiveRecommender:
             todas_recs |= r
 
         return list(todas_recs)[:top_n]
+
+    def recommend_by_similarity(self, user_id, top_n=5):
+        if user_id not in self.usuarios:
+            return []
+
+        todos_filmes = list({filme for u in self.usuarios.values() for filme in u["filmes"]})
+        target_vector = np.array([1 if filme in self.usuarios[user_id]["filmes"] else 0 for filme in todos_filmes])
+
+        similaridades = []
+        for outro_id, info in self.usuarios.items():
+            if outro_id == user_id:
+                continue
+            outro_vector = np.array([1 if filme in info["filmes"] else 0 for filme in todos_filmes])
+            score = jaccard_score(target_vector, outro_vector)
+            similaridades.append((outro_id, score))
+
+        similaridades.sort(key=lambda x: x[1], reverse=True)
+
+        recomendacoes = set()
+        for outro_id, _ in similaridades[:3]:
+            recomendacoes |= self.usuarios[outro_id]["filmes"] - self.usuarios[user_id]["filmes"]
+
+        return list(recomendacoes)[:top_n]
+
+    def media_similaridade(self, user_id):
+        todos_filmes = list({filme for u in self.usuarios.values() for filme in u["filmes"]})
+        target_vector = np.array([1 if filme in self.usuarios[user_id]["filmes"] else 0 for filme in todos_filmes])
+
+        scores = []
+        for outro_id, info in self.usuarios.items():
+            if outro_id == user_id:
+                continue
+            outro_vector = np.array([1 if filme in info["filmes"] else 0 for filme in todos_filmes])
+            scores.append(jaccard_score(target_vector, outro_vector))
+
+        return np.mean(scores)

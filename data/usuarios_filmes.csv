@@ -1,7 +1,8 @@
 0,1,2,3,4
-1,João,Titanic,Avatar 2,Matrix
-2,Maria,Diário de uma paixão,10 Coisas que eu odeio em você,Lagoa Azul
-3,Marcos,Inception,Interestelar,Gladiador
-4,Cláudio,Inception,Interestelar,Matrix
+1,João,Matrix,Titanic,Avatar 2
+2,Maria,10 Coisas que eu odeio em você,Diário de uma paixão,Lagoa Azul
+3,Marcos,Gladiador,Interestelar,Inception
+4,Cláudio,Matrix,Interestelar,Inception
 5,Marcela,Titanic;Diário de uma Paixão;Matrix,,
-6,Carlos,John Wick 4,Capitão América: Soldado Invernal,Matrix
+6,Carlos,John Wick 4,Matrix,Capitão América: Soldado Invernal
+7,Paula,Titanic,Vingadores:Ultimato,Homem de Ferro 2
