@@ -30,7 +30,9 @@ class InteractiveRecommender:
             row = [user_id, info["nome"]] + list(info["filmes"]) + [None]*(max_len - len(info["filmes"]))
             data.append(row)
 
-        df = pd.DataFrame(data)
+        # Define os nomes das colunas: user_id, nome, filme1, filme2, ...
+        colunas = ["user_id", "nome"] + [f"filme{i+1}" for i in range(max_len)]
+        df = pd.DataFrame(data, columns=colunas)
         df.to_csv(self.csv_path, index=False)
 
     def add_user_preferences(self, nome, filmes):
