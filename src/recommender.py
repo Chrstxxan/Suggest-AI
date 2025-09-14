@@ -2,38 +2,23 @@ import pandas as pd
 import os
 
 class InteractiveRecommender:
-    def __init__(self, csv_path):
-        self.csv_path = csv_path
-        self.usuarios = {}
-        self.load_csv(csv_path)
+    def __init__(self, base_dir="D:/Dev/projetos vscode/SuggestAI/data"):
+        self.base_dir = base_dir
+        self.csv_path = os.path.join(base_dir, "usuarios_filmes.csv")
+        self.filmes_path = os.path.join(base_dir, "filmes.csv")
+        self.usuarios = []
+        self.load_csv(self.csv_path)
 
     def load_csv(self, path):
-        if not os.path.exists(path):
-            self.usuarios = {}
-            return
-
-        df = pd.read_csv(path)
-        for _, row in df.iterrows():
-            user_id = row["user_id"]
-            nome = row["nome"]
-            filmes = [str(row[f]) for f in row.index if f.startswith("filme") and pd.notna(row[f])]
-            self.usuarios[user_id] = {"nome": nome, "filmes": set(filmes)}
-
-    def save_csv(self):
-        linhas = []
-        for user_id, dados in self.usuarios.items():
-            linha = {"user_id": user_id, "nome": dados["nome"]}
-            for i, filme in enumerate(dados["filmes"]):
-                linha[f"filme{i+1}"] = filme
-            linhas.append(linha)
-        df = pd.DataFrame(linhas)
-        df.to_csv(self.csv_path, index=False)
-
-    def add_user_preferences(self, nome, filmes):
-        user_id = str(len(self.usuarios) + 1)
-        self.usuarios[user_id] = {"nome": nome, "filmes": set(filmes)}
-        self.save_csv()
-        return user_id
+        if os.path.exists(path):
+            df = pd.read_csv(path)
+            for _, row in df.iterrows():
+                filmes = [row[f"filme{i}"] for i in range(1, 10) if pd.notna(row.get(f"filme{i}"))]
+                self.usuarios.append({
+                    "user_id": str(row["user_id"]),
+                    "nome": row["nome"],
+                    "filmes": filmes
+                })
 
     def add_user_with_genres(self, nome, entrada):
         filmes_do_usuario = []
@@ -43,82 +28,139 @@ class InteractiveRecommender:
             if "-" in item:
                 nome_filme, genero = item.split("-", 1)
                 nome_filme = nome_filme.strip()
+                genero = genero.strip().lower()
                 filmes_do_usuario.append(nome_filme)
-                generos_novos[nome_filme] = [g.strip() for g in genero.split(";")]
+                generos_novos[nome_filme] = [genero]
 
-        user_id = self.add_user_preferences(nome, filmes_do_usuario)
+        user_id = str(len(self.usuarios) + 1)
+        self.usuarios.append({
+            "user_id": user_id,
+            "nome": nome,
+            "filmes": filmes_do_usuario
+        })
 
-        # Atualiza filmes.csv
-        filmes_path = "D:/Dev/projetos vscode/SuggestAI/data/filmes.csv"
-        try:
-            filmes_df = pd.read_csv(filmes_path)
-        except FileNotFoundError:
-            filmes_df = pd.DataFrame(columns=["filme", "generos"])
-
-        filmes_existentes = set(filmes_df["filme"])
-        novas_linhas = []
-
-        for filme, generos in generos_novos.items():
-            if filme not in filmes_existentes:
-                novas_linhas.append({"filme": filme, "generos": ";".join(generos)})
-
-        if novas_linhas:
-            filmes_df = pd.concat([filmes_df, pd.DataFrame(novas_linhas)], ignore_index=True)
-            filmes_df.to_csv(filmes_path, index=False)
+        self.salvar_csv(user_id, nome, filmes_do_usuario)
+        self.atualizar_filmes_csv(generos_novos)
 
         return user_id
 
-    def recommend_by_cluster(self, user_id, top_n=5):
-        # Simulação simples: recomenda filmes populares entre usuários com filmes em comum
-        filmes_usuario = self.usuarios[user_id]["filmes"]
-        contagem = {}
+    def salvar_csv(self, user_id, nome, filmes):
+        linha = {"user_id": user_id, "nome": nome}
+        for i, filme in enumerate(filmes[:9]):
+            linha[f"filme{i+1}"] = filme
 
-        for uid, dados in self.usuarios.items():
-            if uid == user_id:
+        df = pd.DataFrame([linha])
+        if os.path.exists(self.csv_path):
+            df.to_csv(self.csv_path, mode="a", header=False, index=False)
+        else:
+            df.to_csv(self.csv_path, index=False)
+
+    def atualizar_filmes_csv(self, novos_filmes):
+        if os.path.exists(self.filmes_path):
+            df = pd.read_csv(self.filmes_path)
+        else:
+            df = pd.DataFrame(columns=["filme", "genero"])
+
+        filmes_existentes = set(df["filme"].str.lower())
+        novos = []
+
+        for filme, generos in novos_filmes.items():
+            if filme.lower() not in filmes_existentes:
+                novos.append({"filme": filme, "genero": generos[0]})
+
+        if novos:
+            df_novos = pd.DataFrame(novos)
+            df = pd.concat([df, df_novos], ignore_index=True)
+            df.to_csv(self.filmes_path, index=False)
+
+    def recommend_by_cluster(self, user_id):
+        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
+        if not usuario:
+            return []
+
+        filmes_usuario = set(usuario["filmes"])
+        recomendacoes = set()
+
+        for outro in self.usuarios:
+            if outro["user_id"] == user_id:
                 continue
-            intersecao = filmes_usuario.intersection(dados["filmes"])
+            filmes_outro = set(outro["filmes"])
+            intersecao = filmes_usuario & filmes_outro
             if intersecao:
-                for filme in dados["filmes"]:
-                    if filme not in filmes_usuario:
-                        contagem[filme] = contagem.get(filme, 0) + 1
+                recomendacoes.update(filmes_outro - filmes_usuario)
 
-        recomendados = sorted(contagem.items(), key=lambda x: x[1], reverse=True)
-        return [f[0] for f in recomendados[:top_n]]
+        return list(recomendacoes)[:5]
 
-    def recommend_by_similarity(self, user_id, top_n=5):
-        # Simulação: recomenda filmes de usuários com maior número de filmes em comum
-        filmes_usuario = self.usuarios[user_id]["filmes"]
-        similaridade = {}
+    def recommend_by_user_similarity(self, user_id):
+        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
+        if not usuario or not os.path.exists(self.filmes_path):
+            return []
 
-        for uid, dados in self.usuarios.items():
-            if uid == user_id:
+        df = pd.read_csv(self.filmes_path)
+        generos_usuario = set()
+
+        for filme in usuario["filmes"]:
+            linha = df[df["filme"].str.lower() == filme.lower()]
+            if not linha.empty:
+                generos_usuario.add(linha.iloc[0]["genero"])
+
+        candidatos = []
+        for outro in self.usuarios:
+            if outro["user_id"] == user_id:
                 continue
-            intersecao = filmes_usuario.intersection(dados["filmes"])
-            similaridade[uid] = len(intersecao)
+            generos_outro = set()
+            for filme in outro["filmes"]:
+                linha = df[df["filme"].str.lower() == filme.lower()]
+                if not linha.empty:
+                    generos_outro.add(linha.iloc[0]["genero"])
+            if generos_usuario & generos_outro:
+                candidatos.extend([f for f in outro["filmes"] if f not in usuario["filmes"]])
 
-        mais_similares = sorted(similaridade.items(), key=lambda x: x[1], reverse=True)
-        recomendados = []
+        return list(pd.Series(candidatos).value_counts().index[:5])
 
-        for uid, _ in mais_similares:
-            for filme in self.usuarios[uid]["filmes"]:
-                if filme not in filmes_usuario and filme not in recomendados:
-                    recomendados.append(filme)
-                if len(recomendados) >= top_n:
-                    break
-            if len(recomendados) >= top_n:
-                break
+    def recommend_by_genre_similarity(self, user_id):
+        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
+        if not usuario or not os.path.exists(self.filmes_path):
+            return []
 
-        return recomendados
+        df = pd.read_csv(self.filmes_path)
+        generos_usuario = set()
 
-    def recommend(self, user_id, top_n=5):
-        # Recomenda filmes mais frequentes entre todos os usuários
-        filmes_usuario = self.usuarios[user_id]["filmes"]
-        contagem = {}
+        for filme in usuario["filmes"]:
+            linha = df[df["filme"].str.lower() == filme.lower()]
+            if not linha.empty:
+                generos_usuario.add(linha.iloc[0]["genero"])
 
-        for dados in self.usuarios.values():
-            for filme in dados["filmes"]:
-                if filme not in filmes_usuario:
-                    contagem[filme] = contagem.get(filme, 0) + 1
+        pontuacao = {}
+        for _, row in df.iterrows():
+            filme = row["filme"]
+            if filme in usuario["filmes"]:
+                continue
+            genero_filme = row["genero"]
+            if genero_filme in generos_usuario:
+                pontuacao[filme] = pontuacao.get(filme, 0) + 1
 
-        recomendados = sorted(contagem.items(), key=lambda x: x[1], reverse=True)
-        return [f[0] for f in recomendados[:top_n]]
+        recomendados = sorted(pontuacao.items(), key=lambda x: x[1], reverse=True)
+        return [filme for filme, _ in recomendados[:5]]
+
+    def recommend(self, user_id):
+        todos_filmes = []
+        for u in self.usuarios:
+            todos_filmes.extend(u["filmes"])
+        mais_comuns = pd.Series(todos_filmes).value_counts()
+        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
+        if not usuario:
+            return []
+        return [f for f in mais_comuns.index if f not in usuario["filmes"]][:5]
+
+    def get_recommendations(self, user_id):
+        for metodo in [
+            self.recommend_by_cluster,
+            self.recommend_by_user_similarity,
+            self.recommend_by_genre_similarity,
+            self.recommend
+        ]:
+            recomendacoes = metodo(user_id)
+            if recomendacoes:
+                return recomendacoes
+        return []

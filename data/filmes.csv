@@ -1,33 +1,38 @@
-filme,generos
-Matrix,ficção científica;ação
-Titanic,romance;drama
-Avatar 2,ficção científica;aventura
-Diário de uma paixão,romance;drama
-Lagoa Azul,romance;aventura
-10 Coisas que eu odeio em você,comédia;romance
-Inception,ficção científica;ação
-Gladiador,ação;drama
-Interestelar,ficção científica;drama
-Capitão América: Soldado Invernal,ação;super-herói
-John Wick 4,ação;suspense
-Vingadores: Ultimato,ação;super-herói
-Homem de Ferro 2,ação;super-herói
-Invocação do Mal 4,terror;suspense
-Velozes e Furiosos 7,ação;aventura
-Her,ficção científica;romance
-A Bruxa,terror;drama
-O Fabuloso Destino de Amélie Poulain,comédia;romance
-O Grande Truque,drama;suspense
-O Iluminado,terror;suspense
-A Origem,ficção científica;ação
-Cidade de Deus,drama;crime
-O Grande Lebowski,comédia;cult;crime
-Snatch: Porcos e Diamantes,comédia;crime;ação
-O Grande Hotel Budapeste,comédia;drama;cult
-Jojo Rabbit,comédia dramática;sátira;guerra
-Lista de Schindler,drama;histórico;guerra
-Forrest Gump: O Contador de Histórias,drama;comédia;biografia
-Clube da Luta,drama;psicológico;crime
-Manchester à Beira,Mar - Drama
-Réquiem para um Sonho,Drama
-Magnólia,Drama
+filme,genero
+Matrix,ação
+Titanic,drama
+Avatar 2,ficção científica
+Diário de uma paixão,romance
+Lagoa Azul,romance
+10 Coisas que eu odeio em você,comédia
+Inception,ficção científica
+Gladiador,ação
+Interestelar,ficção científica
+Capitão América: Soldado Invernal,ação
+John Wick 4,ação
+Vingadores: Ultimato,ação
+Homem de Ferro 2,ação
+Invocação do Mal 4,terror
+Velozes e Furiosos 7,ação
+Her,romance
+A Bruxa,terror
+O Fabuloso Destino de Amélie Poulain,comédia
+O Grande Truque,suspense
+O Iluminado,terror
+A Origem,ficção científica
+Cidade de Deus,drama
+O Grande Lebowski,comédia
+Snatch: Porcos e Diamantes,ação
+O Grande Hotel Budapeste,comédia
+Jojo Rabbit,comédia
+Lista de Schindler,drama
+Forrest Gump: O Contador de Histórias,drama
+Clube da Luta,drama
+Manchester à Beira mar,drama
+Réquiem para um Sonho,drama
+Magnólia,drama
+Drive My Car,drama
+Tár,drama
+A Favorita,drama
+Boyhood: Da Infância à Juventude,drama
+Azul é a Cor Mais Quente,drama
