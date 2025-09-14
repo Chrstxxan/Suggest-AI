@@ -1,10 +1,13 @@
 user_id,nome,filme1,filme2,filme3
-1,João,Avatar 2,Matrix,Titanic
-2,Maria,Diário de uma paixão,10 Coisas que eu odeio em você,Lagoa Azul
-3,Marcos,Inception,Interestelar,Gladiador
-4,Cláudio,Inception,Interestelar,Matrix
+1,João,Avatar 2,Titanic,Matrix
+2,Maria,Diário de uma paixão,Lagoa Azul,10 Coisas que eu odeio em você
+3,Marcos,Inception,Gladiador,Interestelar
+4,Cláudio,Interestelar,Inception,Matrix
 5,Marcela,Titanic;Diário de uma Paixão;Matrix,,
-6,Carlos,John Wick 4,Matrix,Capitão América: Soldado Invernal
+6,Carlos,Capitão América: Soldado Invernal,John Wick 4,Matrix
 7,Paula,Vingadores:Ultimato,Homem de Ferro 2,Titanic
-8,Nicole,Invocação do Mal 4,Titanic,Velozes e Furiosos 7
-9,Renata,A Bruxa,O Fabuloso Destino de Amélie Poulain,Her
+8,Nicole,Invocação do Mal 4,Velozes e Furiosos 7,Titanic
+9,Renata,Her,A Bruxa,O Fabuloso Destino de Amélie Poulain
+10,Cintia,Inception,O Grande Truque,Matrix
+11,Bruno,Capitão América: Soldado Invernal,Vingadores: Ultimato,Homem de Ferro 2
+12,Nathan,O Iluminado,A Origem,Cidade de Deus
