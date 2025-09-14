@@ -1,139 +1,124 @@
 import pandas as pd
-import numpy as np
-from sklearn.metrics import jaccard_score
-from sklearn.cluster import KMeans
+import os
 
 class InteractiveRecommender:
-    def __init__(self, csv_path=None):
+    def __init__(self, csv_path):
         self.csv_path = csv_path
         self.usuarios = {}
-        self.next_id = 1
-        self.todos_filmes = []
-        self.kmeans_model = None
-        self.clusters = {}
+        self.load_csv(csv_path)
 
-        if csv_path:
-            self.load_csv(csv_path)
-            self._atualizar_clusters()
-
-    def load_csv(self, csv_path):
-        df = pd.read_csv(csv_path)
-        for _, row in df.iterrows():
-            user_id = int(row['user_id'])
-            nome = row['nome']
-            filmes = [f for f in row[2:].dropna().tolist()]
-            self.usuarios[user_id] = {"nome": nome, "filmes": set(filmes)}
-            self.next_id = max(self.next_id, user_id + 1)
-
-    def save_csv(self):
-        if not self.csv_path:
+    def load_csv(self, path):
+        if not os.path.exists(path):
+            self.usuarios = {}
             return
 
-        max_len = max(len(u["filmes"]) for u in self.usuarios.values())
-        data = []
-        for user_id, info in self.usuarios.items():
-            row = [user_id, info["nome"]] + list(info["filmes"]) + [None]*(max_len - len(info["filmes"]))
-            data.append(row)
+        df = pd.read_csv(path)
+        for _, row in df.iterrows():
+            user_id = row["user_id"]
+            nome = row["nome"]
+            filmes = [str(row[f]) for f in row.index if f.startswith("filme") and pd.notna(row[f])]
+            self.usuarios[user_id] = {"nome": nome, "filmes": set(filmes)}
 
-        colunas = ["user_id", "nome"] + [f"filme{i+1}" for i in range(max_len)]
-        df = pd.DataFrame(data, columns=colunas)
+    def save_csv(self):
+        linhas = []
+        for user_id, dados in self.usuarios.items():
+            linha = {"user_id": user_id, "nome": dados["nome"]}
+            for i, filme in enumerate(dados["filmes"]):
+                linha[f"filme{i+1}"] = filme
+            linhas.append(linha)
+        df = pd.DataFrame(linhas)
         df.to_csv(self.csv_path, index=False)
 
     def add_user_preferences(self, nome, filmes):
-        user_id = self.next_id
-        self.next_id += 1
+        user_id = str(len(self.usuarios) + 1)
         self.usuarios[user_id] = {"nome": nome, "filmes": set(filmes)}
-        self._atualizar_clusters()
         self.save_csv()
         return user_id
 
-    def recommend(self, user_id, top_n=5):
-        if user_id not in self.usuarios:
-            return []
+    def add_user_with_genres(self, nome, entrada):
+        filmes_do_usuario = []
+        generos_novos = {}
 
-        filmes_digitados = self.usuarios[user_id]["filmes"]
-        recomendacoes = {}
+        for item in entrada.split(","):
+            if "-" in item:
+                nome_filme, genero = item.split("-", 1)
+                nome_filme = nome_filme.strip()
+                filmes_do_usuario.append(nome_filme)
+                generos_novos[nome_filme] = [g.strip() for g in genero.split(";")]
 
-        for outro_id, info in self.usuarios.items():
-            if outro_id == user_id:
-                continue
-            intersecao = filmes_digitados & info["filmes"]
-            if intersecao:
-                recs = info["filmes"] - filmes_digitados
-                if recs:
-                    recomendacoes[outro_id] = recs
+        user_id = self.add_user_preferences(nome, filmes_do_usuario)
 
-        todas_recs = set()
-        for r in recomendacoes.values():
-            todas_recs |= r
+        # Atualiza filmes.csv
+        filmes_path = "D:/Dev/projetos vscode/SuggestAI/data/filmes.csv"
+        try:
+            filmes_df = pd.read_csv(filmes_path)
+        except FileNotFoundError:
+            filmes_df = pd.DataFrame(columns=["filme", "generos"])
 
-        return list(todas_recs)[:top_n]
+        filmes_existentes = set(filmes_df["filme"])
+        novas_linhas = []
 
-    def recommend_by_similarity(self, user_id, top_n=5):
-        if user_id not in self.usuarios:
-            return []
+        for filme, generos in generos_novos.items():
+            if filme not in filmes_existentes:
+                novas_linhas.append({"filme": filme, "generos": ";".join(generos)})
 
-        todos_filmes = list({filme for u in self.usuarios.values() for filme in u["filmes"]})
-        target_vector = np.array([1 if filme in self.usuarios[user_id]["filmes"] else 0 for filme in todos_filmes])
+        if novas_linhas:
+            filmes_df = pd.concat([filmes_df, pd.DataFrame(novas_linhas)], ignore_index=True)
+            filmes_df.to_csv(filmes_path, index=False)
 
-        similaridades = []
-        for outro_id, info in self.usuarios.items():
-            if outro_id == user_id:
-                continue
-            outro_vector = np.array([1 if filme in info["filmes"] else 0 for filme in todos_filmes])
-            score = jaccard_score(target_vector, outro_vector)
-            similaridades.append((outro_id, score))
-
-        similaridades.sort(key=lambda x: x[1], reverse=True)
-
-        recomendacoes = set()
-        for outro_id, _ in similaridades[:3]:
-            recomendacoes |= self.usuarios[outro_id]["filmes"] - self.usuarios[user_id]["filmes"]
-
-        return list(recomendacoes)[:top_n]
-
-    def media_similaridade(self, user_id):
-        todos_filmes = list({filme for u in self.usuarios.values() for filme in u["filmes"]})
-        target_vector = np.array([1 if filme in self.usuarios[user_id]["filmes"] else 0 for filme in todos_filmes])
-
-        scores = []
-        for outro_id, info in self.usuarios.items():
-            if outro_id == user_id:
-                continue
-            outro_vector = np.array([1 if filme in info["filmes"] else 0 for filme in todos_filmes])
-            scores.append(jaccard_score(target_vector, outro_vector))
-
-        return np.mean(scores)
-
-    def _atualizar_clusters(self, n_clusters=3):
-        if len(self.usuarios) < n_clusters:
-            self.clusters = {}
-            self.kmeans_model = None
-            return
-
-        self.todos_filmes = list({filme for u in self.usuarios.values() for filme in u["filmes"]})
-        vetores = []
-
-        for user_id in self.usuarios:
-            vetor = [1 if filme in self.usuarios[user_id]["filmes"] else 0 for filme in self.todos_filmes]
-            vetores.append(vetor)
-
-        X = np.array(vetores)
-        self.kmeans_model = KMeans(n_clusters=n_clusters, random_state=42)
-        labels = self.kmeans_model.fit_predict(X)
-
-        self.clusters = {user_id: cluster for user_id, cluster in zip(self.usuarios.keys(), labels)}
+        return user_id
 
     def recommend_by_cluster(self, user_id, top_n=5):
-        if user_id not in self.usuarios or user_id not in self.clusters:
-            return []
+        # Simulação simples: recomenda filmes populares entre usuários com filmes em comum
+        filmes_usuario = self.usuarios[user_id]["filmes"]
+        contagem = {}
 
-        cluster_id = self.clusters[user_id]
-        filmes_cluster = []
+        for uid, dados in self.usuarios.items():
+            if uid == user_id:
+                continue
+            intersecao = filmes_usuario.intersection(dados["filmes"])
+            if intersecao:
+                for filme in dados["filmes"]:
+                    if filme not in filmes_usuario:
+                        contagem[filme] = contagem.get(filme, 0) + 1
 
-        for outro_id, info in self.usuarios.items():
-            if outro_id != user_id and self.clusters.get(outro_id) == cluster_id:
-                filmes_cluster.extend(info["filmes"])
+        recomendados = sorted(contagem.items(), key=lambda x: x[1], reverse=True)
+        return [f[0] for f in recomendados[:top_n]]
 
-        filmes_recomendados = list(set(filmes_cluster) - self.usuarios[user_id]["filmes"])
-        return filmes_recomendados[:top_n]
+    def recommend_by_similarity(self, user_id, top_n=5):
+        # Simulação: recomenda filmes de usuários com maior número de filmes em comum
+        filmes_usuario = self.usuarios[user_id]["filmes"]
+        similaridade = {}
+
+        for uid, dados in self.usuarios.items():
+            if uid == user_id:
+                continue
+            intersecao = filmes_usuario.intersection(dados["filmes"])
+            similaridade[uid] = len(intersecao)
+
+        mais_similares = sorted(similaridade.items(), key=lambda x: x[1], reverse=True)
+        recomendados = []
+
+        for uid, _ in mais_similares:
+            for filme in self.usuarios[uid]["filmes"]:
+                if filme not in filmes_usuario and filme not in recomendados:
+                    recomendados.append(filme)
+                if len(recomendados) >= top_n:
+                    break
+            if len(recomendados) >= top_n:
+                break
+
+        return recomendados
+
+    def recommend(self, user_id, top_n=5):
+        # Recomenda filmes mais frequentes entre todos os usuários
+        filmes_usuario = self.usuarios[user_id]["filmes"]
+        contagem = {}
+
+        for dados in self.usuarios.values():
+            for filme in dados["filmes"]:
+                if filme not in filmes_usuario:
+                    contagem[filme] = contagem.get(filme, 0) + 1
+
+        recomendados = sorted(contagem.items(), key=lambda x: x[1], reverse=True)
+        return [f[0] for f in recomendados[:top_n]]
