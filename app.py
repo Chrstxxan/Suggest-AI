@@ -18,9 +18,9 @@ else:
     print("Modo inválido. Encerrando.")
     exit()
 
-# Caminho absoluto para o arquivo de usuários
-csv_path = "D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv"
-recommender = InteractiveRecommender(base_dir="D:/Dev/projetos vscode/SuggestAI/data")
+# caminho absoluto para os arquivos pq dá pau se tentar de outro jeito
+base_dir = "D:/Dev/projetos vscode/SuggestAI/data"
+recommender = InteractiveRecommender(base_dir=base_dir)
 
 if modo == "manual":
     nome = input("Digite seu nome: ").strip()
@@ -31,20 +31,17 @@ if modo == "manual":
     print("Exemplo: Matrix - ação, Titanic - drama, Avatar 2 - ficção científica\n")
 
     entrada = input("Digite os filmes e gêneros separados por vírgula: ").strip()
-
-    # Validação simples para evitar erro de separação
-    if "," not in entrada:
-        print("\nOps... Parece que você não separou os filmes por vírgula. Tente novamente usando o formato correto.")
-        exit()
-
     user_id = recommender.add_user_with_genres(nome, entrada)
+
     recomendacoes = recommender.get_recommendations(user_id)
+    if recomendacoes:
+        print(f"\nRecomendações para você: {', '.join(recomendacoes)}")
+    else:
+        print("\nNão encontrei recomendações suficientes. Tente adicionar mais filmes.")
 
-    print(f"\n Recomendações para você: {', '.join(recomendacoes)}")
-
-else:
+else:  # modo chat
     while True:
-        frase = input("\n Escreva o que você gosta ou quer evitar (ou 'sair' para encerrar): ").strip()
+        frase = input("\nEscreva o que você gosta ou quer evitar (ou 'sair' para encerrar): ").strip()
         if frase.lower() == "sair":
             break
         resposta = recomendar_por_chat(frase, recommender)

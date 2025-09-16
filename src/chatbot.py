@@ -35,11 +35,9 @@ def interpretar_frase(frase):
 
 def gerar_filmes_por_genero(gostos, aversoes):
     filmes_relevantes = []
-
     for filme, genero in generos_filmes.items():
         if genero in gostos and genero not in aversoes:
             filmes_relevantes.append(filme)
-
     return filmes_relevantes
 
 def reforcar_por_genero(recomendacoes, gostos, generos_filmes):
@@ -67,10 +65,18 @@ def recomendar_por_chat(frase, recommender, top_n=5):
     entrada_formatada = ", ".join([f"{filme} - {generos_filmes[filme]}" for filme in filmes_preferidos])
     user_id = recommender.add_user_with_genres(nome, entrada_formatada)
 
-    recomendacoes = recommender.get_recommendations(user_id)
+    recomendacoes = recommender.get_recommendations(user_id, top_n=top_n)
     recomendacoes_filtradas = reforcar_por_genero(recomendacoes, gostos, generos_filmes)
 
     if not recomendacoes_filtradas:
         return "Não encontrei recomendações que combinem com seus gostos. Tente outra descrição?"
 
-    return f"Baseado no que você disse, recomendo: {', '.join(recomendacoes_filtradas)}"
+    print(f"Baseado no que você disse, recomendo: {', '.join(recomendacoes_filtradas)}")
+
+    # pergunta feedback e atualiza pesos
+    for filme in recomendacoes_filtradas:
+        feedback = input(f"Você gostou do filme '{filme}'? [s/n]: ").strip().lower()
+        if feedback in ["s", "n"]:
+            recommender.update_weights(user_id, filme, feedback)
+
+    return f"Recomendações atualizadas com base no seu feedback!"
