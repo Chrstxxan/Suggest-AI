@@ -39,6 +39,9 @@ class InteractiveRecommender:
                 filmes_do_usuario.append(nome_filme)
                 generos_novos[nome_filme] = genero
 
+        if len(filmes_do_usuario) < 3:
+            raise ValueError("O usuário deve ter pelo menos 3 filmes.")
+
         user_id = str(len(self.usuarios) + 1)
         pesos = {g: (1.0 if g in generos_novos.values() else 0.0) for g in self.generos}
 
@@ -65,6 +68,7 @@ class InteractiveRecommender:
             df.to_csv(self.csv_path, index=False)
 
     def atualizar_filmes_csv(self, novos_filmes):
+        """Adiciona novos filmes ao CSV de filmes, caso não existam."""
         if os.path.exists(self.filmes_path):
             df = pd.read_csv(self.filmes_path)
         else:
@@ -81,9 +85,9 @@ class InteractiveRecommender:
             df = pd.concat([df, df_novos], ignore_index=True)
             df.to_csv(self.filmes_path, index=False)
 
-    # FUNCOES DE RECOMENDACAO -------------------
+    # ----------------- MÉTODOS DE RECOMENDAÇÃO -----------------
 
-    def recommend_by_weights(self, user_id, top_n=5):
+    def recommend_by_weights(self, user_id, top_n=3):
         usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
         if not usuario or not os.path.exists(self.filmes_path):
             return []
@@ -102,7 +106,7 @@ class InteractiveRecommender:
         recomendados = sorted(recomendacoes.items(), key=lambda x: x[1], reverse=True)
         return [f for f, _ in recomendados[:top_n]]
 
-    def recommend_by_user_similarity(self, user_id, top_n=5):
+    def recommend_by_user_similarity(self, user_id, top_n=3):
         usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
         if not usuario or not os.path.exists(self.filmes_path):
             return []
@@ -128,7 +132,7 @@ class InteractiveRecommender:
 
         return list(pd.Series(candidatos).value_counts().index[:top_n])
 
-    def recommend_by_cluster(self, user_id, top_n=5):
+    def recommend_by_cluster(self, user_id, top_n=3):
         usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
         if not usuario:
             return []
@@ -145,7 +149,7 @@ class InteractiveRecommender:
 
         return list(recomendacoes)[:top_n]
 
-    def recommend_by_popularity(self, user_id, top_n=5):
+    def recommend_by_popularity(self, user_id, top_n=3):
         todos_filmes = []
         for u in self.usuarios:
             todos_filmes.extend(u["filmes"])
@@ -155,7 +159,8 @@ class InteractiveRecommender:
         mais_comuns = pd.Series(todos_filmes).value_counts()
         return [f for f in mais_comuns.index if f not in usuario["filmes"]][:top_n]
 
-    # FEEDBACK E PESOS
+    # ----------------- FEEDBACK -----------------
+
     def update_weights(self, user_id, filme, feedback):
         usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
         if not usuario:
@@ -179,20 +184,16 @@ class InteractiveRecommender:
                 df.at[idx[0], g] = p
             df.to_csv(self.csv_path, index=False)
 
-    #  RECOMENDACAO FINAL HIBRIDA
+    # ----------------- RECOMENDAÇÃO FINAL HÍBRIDA -----------------
 
-    def get_recommendations(self, user_id, top_n=5):
-        # tentando com pesos
+    def get_recommendations(self, user_id, top_n=3):
         recs = self.recommend_by_weights(user_id, top_n)
         if recs:
             return recs
-        # se nao tiver pesos suficientes, tenta similaridade
         recs = self.recommend_by_user_similarity(user_id, top_n)
         if recs:
             return recs
-        # se ainda não, tenta cluster
         recs = self.recommend_by_cluster(user_id, top_n)
         if recs:
             return recs
-        # por fim, fallback para popularidade
         return self.recommend_by_popularity(user_id, top_n)

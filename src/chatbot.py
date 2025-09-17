@@ -1,6 +1,8 @@
 import pandas as pd
 import unicodedata
 
+from src.recommender import InteractiveRecommender
+
 def normalizar(texto):
     texto = texto.lower().strip()
     texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
@@ -54,7 +56,7 @@ def reforcar_por_genero(recomendacoes, gostos, generos_filmes):
         return (compativeis + restantes)[:5]
     return recomendacoes[:5]
 
-def recomendar_por_chat(frase, recommender, top_n=5):
+def recomendar_por_chat(frase, recommender, top_n=3):
     gostos, aversoes = interpretar_frase(frase)
     filmes_preferidos = gerar_filmes_por_genero(gostos, aversoes)
 
@@ -62,7 +64,15 @@ def recomendar_por_chat(frase, recommender, top_n=5):
         return "Não encontrei filmes com esse perfil. Pode tentar outra descrição?"
 
     nome = input("Qual é seu nome? ").strip()
-    entrada_formatada = ", ".join([f"{filme} - {generos_filmes[filme]}" for filme in filmes_preferidos])
+    
+    # Filtrar apenas filmes que existem no dicionário de gêneros
+    filmes_para_salvar = [f for f in filmes_preferidos if f in generos_filmes][:3]
+    if not filmes_para_salvar:
+        return "Não encontrei filmes válidos para salvar. Tente outra descrição."
+    
+    entrada_formatada = ", ".join([f"{filme} - {generos_filmes[filme]}" for filme in filmes_para_salvar])
+    
+    # Criar usuário no recommender com os filmes formatados
     user_id = recommender.add_user_with_genres(nome, entrada_formatada)
 
     recomendacoes = recommender.get_recommendations(user_id, top_n=top_n)
@@ -71,12 +81,20 @@ def recomendar_por_chat(frase, recommender, top_n=5):
     if not recomendacoes_filtradas:
         return "Não encontrei recomendações que combinem com seus gostos. Tente outra descrição?"
 
-    print(f"Baseado no que você disse, recomendo: {', '.join(recomendacoes_filtradas)}")
+    print(f"\nBaseado no que você disse, recomendo: {', '.join(recomendacoes_filtradas)}")
 
-    # pergunta feedback e atualiza pesos
+    # feedback do usuário para atualizar pesos
+    filmes_aprovados = []
     for filme in recomendacoes_filtradas:
         feedback = input(f"Você gostou do filme '{filme}'? [s/n]: ").strip().lower()
         if feedback in ["s", "n"]:
             recommender.update_weights(user_id, filme, feedback)
+            if feedback == "s":
+                filmes_aprovados.append(filme)
 
-    return f"Recomendações atualizadas com base no seu feedback!"
+    # Atualizar o CSV do usuário com apenas os filmes aprovados
+    if filmes_aprovados:
+        entrada_formatada_final = ", ".join([f"{filme} - {generos_filmes[filme]}" for filme in filmes_aprovados[:3]])
+        recommender.add_user_with_genres(nome, entrada_formatada_final)
+
+    return "Recomendações atualizadas com base no seu feedback!"

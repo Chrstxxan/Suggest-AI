@@ -1,4 +1,3 @@
-import pandas as pd
 from src.recommender import InteractiveRecommender
 from src.chatbot import recomendar_por_chat
 
@@ -18,7 +17,7 @@ else:
     print("Modo inválido. Encerrando.")
     exit()
 
-# caminho absoluto para os arquivos pq dá pau se tentar de outro jeito
+# caminho absoluto para os arquivos
 base_dir = "D:/Dev/projetos vscode/SuggestAI/data"
 recommender = InteractiveRecommender(base_dir=base_dir)
 
@@ -33,7 +32,7 @@ if modo == "manual":
     entrada = input("Digite os filmes e gêneros separados por vírgula: ").strip()
     user_id = recommender.add_user_with_genres(nome, entrada)
 
-    recomendacoes = recommender.get_recommendations(user_id)
+    recomendacoes = recommender.get_recommendations(user_id, top_n=3)
     if recomendacoes:
         print(f"\nRecomendações para você: {', '.join(recomendacoes)}")
     else:
@@ -44,6 +43,6 @@ else:  # modo chat
         frase = input("\nEscreva o que você gosta ou quer evitar (ou 'sair' para encerrar): ").strip()
         if frase.lower() == "sair":
             break
-        resposta = recomendar_por_chat(frase, recommender)
+        resposta = recomendar_por_chat(frase, recommender, top_n=3)
         if resposta:
             print(f"\n{resposta}")
