@@ -17,7 +17,7 @@ else:
     print("Modo inválido. Encerrando.")
     exit()
 
-# caminho absoluto para os arquivos
+# Caminho absoluto para os arquivos
 base_dir = "D:/Dev/projetos vscode/SuggestAI/data"
 recommender = InteractiveRecommender(base_dir=base_dir)
 

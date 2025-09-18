@@ -1,29 +1,34 @@
-user_id,nome,filme1,filme2,filme3,acao,drama,ficcao,terror,comedia,ficcao_cientifica,romance,suspense,ação,comédia,ficção científica
-1,João,Titanic,Matrix,Avatar 2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-2,Maria,10 Coisas que eu odeio em você,Diário de uma paixão,Lagoa Azul,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-3,Marcos,Inception,Interestelar,Gladiador,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-4,Cláudio,Inception,Interestelar,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-5,Marcela,Titanic,Diário de uma paixão,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-6,Carlos,Capitão América: Soldado Invernal,John Wick 4,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-7,Paula,Vingadores: Ultimato,Titanic,Homem de Ferro 2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-8,Nicole,Invocação do Mal 4,Titanic,Velozes e Furiosos 7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-9,Renata,O Fabuloso Destino de Amélie Poulain,A Bruxa,Her,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-10,Cintia,Inception,O Grande Truque,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-11,Bruno,Vingadores: Ultimato,Capitão América: Soldado Invernal,Homem de Ferro 2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-12,Nathan,Cidade de Deus,O Iluminado,A Origem,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-13,Marcos,Vingadores: Ultimato,Gladiador,A Origem,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-14,Ana Carolina,Invocação do Mal 4,O Iluminado,A Bruxa,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-15,Beatriz,10 Coisas que eu odeio em você,O Fabuloso Destino de Amélie Poulain,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-16,Gabriela,Jojo Rabbit,O Grande Hotel Budapeste,Snatch: Porcos e Diamantes,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-17,Rafaela,Lista de Schindler,Forrest Gump: O Contador de Histórias,Clube da Luta,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-18,Henrique,Manchester à Beira,Réquiem para um Sonho,Magnólia,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-19,William,Manchester à Beira,Réquiem para um Sonho,Magnólia,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-20,Igor,Magnólia,Manchester à Beira,Réquiem para um Sonho,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-21,Julia,Matrix,Inception,Gladiador,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-22,Lucas,Drive My Car,Tár,A Favorita,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-23,Viviane,Titanic,Diário de uma paixão,Gladiador,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-24,Carla,Forrest Gump: O Contador de Histórias,Manchester à Beira Mar,Magnólia,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-25,Henrique,A Noite do Diabo,Hereditário,O Homem nas Trevas,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,,,
-26,Iris,Titanic,Cidade de Deus,Lista de Schindler,0.0,1.3,1.0,0.0,0.0,0.0,0.0,0.0,,,
-27,Roberta,Titanic,Cidade de Deus,Lista de Schindler,0.0,1.3000000000000003,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+user_id,nome,filme1,filme2,filme3,ação,drama,ficção científica,terror,comédia,romance,suspense
+1,João,Titanic,Matrix,Avatar 2,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+2,Maria,10 Coisas que eu odeio em você,Diário de uma paixão,Lagoa Azul,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+3,Marcos,Inception,Interestelar,Gladiador,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+4,Cláudio,Inception,Interestelar,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+5,Marcela,Titanic,Diário de uma paixão,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+6,Carlos,Capitão América: Soldado Invernal,John Wick 4,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+7,Paula,Vingadores: Ultimato,Titanic,Homem de Ferro 2,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+8,Nicole,Invocação do Mal 4,Titanic,Velozes e Furiosos 7,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+9,Renata,O Fabuloso Destino de Amélie Poulain,A Bruxa,Her,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+10,Cintia,Inception,O Grande Truque,Matrix,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+11,Bruno,Vingadores: Ultimato,Capitão América: Soldado Invernal,Homem de Ferro 2,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+12,Nathan,Cidade de Deus,O Iluminado,A Origem,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+13,Marcos,Vingadores: Ultimato,Gladiador,A Origem,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+14,Ana Carolina,Invocação do Mal 4,O Iluminado,A Bruxa,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+15,Beatriz,10 Coisas que eu odeio em você,O Fabuloso Destino de Amélie Poulain,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+16,Gabriela,Jojo Rabbit,O Grande Hotel Budapeste,Snatch: Porcos e Diamantes,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+17,Rafaela,Lista de Schindler,Forrest Gump: O Contador de Histórias,Clube da Luta,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+18,Henrique,Manchester à Beira,Réquiem para um Sonho,Magnólia,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+19,William,Manchester à Beira,Réquiem para um Sonho,Magnólia,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+20,Igor,Magnólia,Manchester à Beira,Réquiem para um Sonho,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+21,Julia,Matrix,Inception,Gladiador,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+22,Lucas,Drive My Car,Tár,A Favorita,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+23,Viviane,Titanic,Diário de uma paixão,Gladiador,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+24,Carla,Forrest Gump: O Contador de Histórias,Manchester à Beira Mar,Magnólia,0.0,1.0,0.0,0.0,0.0,0.0,0.0
+25,Henrique,A Noite do Diabo,Hereditário,O Homem nas Trevas,0.0,0.0,0.0,1.0,0.0,0.0,1.0
+26,Iris,Titanic,Cidade de Deus,Lista de Schindler,0.0,1.3,1.0,0.0,0.0,0.0,0.0
+27,Roberta,Titanic,Cidade de Deus,Lista de Schindler,0.0,1.3,1.0,0.0,0.0,0.0,0.0
 28,Roberta,Forrest Gump: O Contador de Histórias,Clube da Luta,Manchester à Beira mar,0.0,0.0,1.0,0.0,0.0,0.0,0.0
+29,Gabriel,Invocação do Mal 4,A Bruxa,O Iluminado,0.0,0.0,1.0,0.0,0.0,0.0,0.0
+30,Gabriel,Invocação do Mal 4,A Bruxa,O Iluminado,0.0,0.0,1.3,0.0,0.0,0.0,0.0
+31,Gabriel,A Noite do Diabo,Hereditário,O Homem nas Trevas,0.0,0.0,0.0,0.0,0.0,0.0,1.0
+32,Luana,Invocação do Mal 4,A Bruxa,O Iluminado,0.0,0.0,0.0,1.3000000000000005,0.0,0.0,0.0
+33,Luana,A Noite do Diabo,Hereditário,O Homem nas Trevas,0.0,0.0,0.0,1.0,0.0,0.0,0.0

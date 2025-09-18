@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from collections import defaultdict
 
 class InteractiveRecommender:
     def __init__(self, base_dir="D:/Dev/projetos vscode/SuggestAI/data"):
@@ -9,6 +10,8 @@ class InteractiveRecommender:
         self.generos = self.carregar_generos()
         self.usuarios = []
         self.load_csv(self.csv_path)
+        self.user_index = {}  # map user_id → índice na lista para KNN/MF
+        self.build_user_index()
 
     def carregar_generos(self):
         df = pd.read_csv(os.path.join(self.base_dir, "filmes.csv"))
@@ -26,6 +29,9 @@ class InteractiveRecommender:
                     "filmes": filmes,
                     "pesos": pesos
                 })
+
+    def build_user_index(self):
+        self.user_index = {u["user_id"]: idx for idx, u in enumerate(self.usuarios)}
 
     def add_user_with_genres(self, nome, entrada):
         filmes_do_usuario = []
@@ -51,24 +57,39 @@ class InteractiveRecommender:
             "filmes": filmes_do_usuario,
             "pesos": pesos
         })
+        self.user_index[user_id] = len(self.usuarios) - 1
 
         self.salvar_csv(user_id, nome, filmes_do_usuario, pesos)
         self.atualizar_filmes_csv(generos_novos)
         return user_id
 
     def salvar_csv(self, user_id, nome, filmes, pesos):
+        # monta o dicionário da nova linha
         linha = {"user_id": user_id, "nome": nome}
-        for i, filme in enumerate(filmes[:9]):
+        for i, filme in enumerate(filmes[:9]):  # até 9 filmes
             linha[f"filme{i+1}"] = filme
-        linha.update(pesos)
-        df = pd.DataFrame([linha])
+
+        # se o arquivo existe, usamos as colunas dele
         if os.path.exists(self.csv_path):
-            df.to_csv(self.csv_path, mode="a", header=False, index=False)
+            df = pd.read_csv(self.csv_path)
+
+            # garante que só usa colunas que já existem
+            for col in df.columns:
+                if col in pesos:
+                    linha[col] = pesos[col]
+
+            # adiciona a nova linha ao dataframe
+            df = pd.concat([df, pd.DataFrame([linha])], ignore_index=True)
         else:
-            df.to_csv(self.csv_path, index=False)
+            # se não existe, cria com filmes + pesos que recebemos
+            linha.update(pesos)
+            df = pd.DataFrame([linha])
+
+        # salva o CSV sem duplicar cabeçalhos
+        df.to_csv(self.csv_path, index=False)
+
 
     def atualizar_filmes_csv(self, novos_filmes):
-        """Adiciona novos filmes ao CSV de filmes, caso não existam."""
         if os.path.exists(self.filmes_path):
             df = pd.read_csv(self.filmes_path)
         else:
@@ -84,8 +105,6 @@ class InteractiveRecommender:
             df_novos = pd.DataFrame(novos)
             df = pd.concat([df, df_novos], ignore_index=True)
             df.to_csv(self.filmes_path, index=False)
-
-    # ----------------- MÉTODOS DE RECOMENDAÇÃO -----------------
 
     def recommend_by_weights(self, user_id, top_n=3):
         usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
@@ -159,8 +178,6 @@ class InteractiveRecommender:
         mais_comuns = pd.Series(todos_filmes).value_counts()
         return [f for f in mais_comuns.index if f not in usuario["filmes"]][:top_n]
 
-    # ----------------- FEEDBACK -----------------
-
     def update_weights(self, user_id, filme, feedback):
         usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
         if not usuario:
@@ -184,16 +201,57 @@ class InteractiveRecommender:
                 df.at[idx[0], g] = p
             df.to_csv(self.csv_path, index=False)
 
-    # ----------------- RECOMENDAÇÃO FINAL HÍBRIDA -----------------
+    def recommend_by_knn(self, user_id, top_n=3):
+        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
+        if not usuario:
+            return []
+
+        filmes_usuario = set(usuario["filmes"])
+        similar_scores = []
+        for outro in self.usuarios:
+            if outro["user_id"] == user_id:
+                continue
+            filmes_outro = set(outro["filmes"])
+            score = len(filmes_usuario & filmes_outro)
+            if score > 0:
+                similar_scores.append((score, outro["user_id"]))
+
+        similar_scores.sort(reverse=True)
+        recomendacoes = []
+        for _, uid in similar_scores:
+            outro = next(u for u in self.usuarios if u["user_id"] == uid)
+            recomendacoes.extend([f for f in outro["filmes"] if f not in filmes_usuario])
+
+        return list(pd.Series(recomendacoes).value_counts().index[:top_n])
+
+    def recommend_by_matrix_factorization(self, user_id, top_n=3):
+        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
+        if not usuario:
+            return []
+
+        df_filmes = pd.read_csv(self.filmes_path)
+        generos_usuario = [df_filmes[df_filmes["filme"].str.lower() == f.lower()]["genero"].values[0]
+                           for f in usuario["filmes"] if not df_filmes[df_filmes["filme"].str.lower() == f.lower()].empty]
+
+        todos_filmes = df_filmes[~df_filmes["filme"].isin(usuario["filmes"])]
+        todos_filmes["score"] = todos_filmes["genero"].apply(lambda g: generos_usuario.count(g))
+        recomendados = todos_filmes.sort_values("score", ascending=False)["filme"].tolist()
+        return recomendados[:top_n]
 
     def get_recommendations(self, user_id, top_n=3):
-        recs = self.recommend_by_weights(user_id, top_n)
-        if recs:
-            return recs
-        recs = self.recommend_by_user_similarity(user_id, top_n)
-        if recs:
-            return recs
-        recs = self.recommend_by_cluster(user_id, top_n)
-        if recs:
-            return recs
+        recs_pesos = self.recommend_by_weights(user_id, top_n)
+        if recs_pesos:
+            return recs_pesos
+        recs_knn = self.recommend_by_knn(user_id, top_n)
+        if recs_knn:
+            return recs_knn
+        recs_mf = self.recommend_by_matrix_factorization(user_id, top_n)
+        if recs_mf:
+            return recs_mf
+        recs_user = self.recommend_by_user_similarity(user_id, top_n)
+        if recs_user:
+            return recs_user
+        recs_cluster = self.recommend_by_cluster(user_id, top_n)
+        if recs_cluster:
+            return recs_cluster
         return self.recommend_by_popularity(user_id, top_n)

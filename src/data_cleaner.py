@@ -1,63 +1,42 @@
 import pandas as pd
 import unicodedata
-import os
 
-# === Normalização do texto ===
-def normalizar(texto):
-    if not isinstance(texto, str):
-        return texto
-    texto = texto.lower().strip()
-    texto = unicodedata.normalize("NFKD", texto).encode("ASCII", "ignore").decode("utf-8")
-    return texto
+# Função para normalizar nomes de colunas
+def normalizar(col):
+    col = col.strip().lower()
+    col = unicodedata.normalize('NFKD', col).encode('ASCII', 'ignore').decode('utf-8')
+    col = col.replace(" ", "_")
+    return col
 
-# === Limpeza da base de usuários ===
-def limpar_usuario_filmes(csv_path):
-    if not os.path.exists(csv_path):
-        print(f"Arquivo {csv_path} não encontrado.")
-        return
+# Carrega o CSV
+df = pd.read_csv("D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv")
 
-    df = pd.read_csv(csv_path)
+# Cria um mapeamento de colunas normalizadas
+col_map = {}
+for col in df.columns:
+    norm = normalizar(col)
+    if norm in col_map:
+        col_map[norm].append(col)
+    else:
+        col_map[norm] = [col]
 
-    # garante que todas as colunas de filme existam até filme9
-    for i in range(1, 10):
-        col = f"filme{i}"
-        if col not in df.columns:
-            df[col] = ""
+# Mescla colunas duplicadas
+df_limpo = pd.DataFrame()
+for norm, cols in col_map.items():
+    if len(cols) == 1:
+        df_limpo[cols[0]] = df[cols[0]]
+    else:
+        # Soma os valores se forem numéricos, ou mantém o primeiro não nulo
+        base = df[cols[0]].copy()
+        for col in cols[1:]:
+            if pd.api.types.is_numeric_dtype(df[col]):
+                base = base.fillna(0) + df[col].fillna(0)
+            else:
+                base = base.combine_first(df[col])
+        df_limpo[cols[0]] = base
 
-    # normaliza todos os filmes
-    for col in df.columns:
-        if "filme" in col:
-            df[col] = df[col].apply(lambda x: normalizar(str(x)) if pd.notna(x) else "")
-            df[col] = df[col].str.strip()
+# Remove colunas completamente vazias
+df_limpo.dropna(axis=1, how="all", inplace=True)
 
-    # adiciona colunas de peso por gênero se não existirem
-    generos = ["acao", "drama", "romance", "ficcao_cientifica", "terror", "comedia", "suspense"]
-    for g in generos:
-        col = f"peso_{g}"
-        if col not in df.columns:
-            df[col] = 1.0  # inicializa com peso neutro
-
-    # salva de volta
-    df.to_csv(csv_path, index=False)
-    print(f"CSV de usuários limpo e salvo em {csv_path}")
-
-# === Limpeza da base de filmes ===
-def limpar_filmes(csv_path):
-    if not os.path.exists(csv_path):
-        print(f"Arquivo {csv_path} não encontrado.")
-        return
-
-    df = pd.read_csv(csv_path)
-
-    # normaliza os nomes dos filmes e gêneros
-    df["filme"] = df["filme"].apply(normalizar)
-    df["genero"] = df["genero"].apply(normalizar)
-
-    df.to_csv(csv_path, index=False)
-    print(f"CSV de filmes limpo e salvo em {csv_path}")
-
-# === Execução principal ===
-if __name__ == "__main__":
-    base_dir = "D:/Dev/projetos vscode/SuggestAI/data"
-    limpar_usuario_filmes(os.path.join(base_dir, "usuarios_filmes.csv"))
-    limpar_filmes(os.path.join(base_dir, "filmes.csv"))
+# Salva o CSV limpo
+df_limpo.to_csv("usuarios_filmes_corrigido.csv", index=False)
