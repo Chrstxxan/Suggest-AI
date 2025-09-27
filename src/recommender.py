@@ -1,257 +1,325 @@
-import pandas as pd
 import os
+import pandas as pd
+import numpy as np
 from collections import defaultdict
+import unicodedata
+from sklearn.neighbors import NearestNeighbors
+
+# -------- util --------
+def _normalizar(texto: str) -> str:
+    t = texto.lower().strip()
+    return unicodedata.normalize("NFKD", t).encode("ASCII", "ignore").decode("utf-8")
+
+def _cosine_similarity_vec(a: np.ndarray, B: np.ndarray):
+    """a : (d,), B: (n, d) -> returns (n,) cosine similarity a·B_i / (|a||B_i|)"""
+    if B.size == 0:
+        return np.array([])
+    a = a.astype(float)
+    B = B.astype(float)
+    a_norm = np.linalg.norm(a)
+    B_norm = np.linalg.norm(B, axis=1)
+    denom = a_norm * B_norm
+    denom[denom == 0] = 1e-9
+    sims = (B @ a) / denom
+    return sims
 
 class InteractiveRecommender:
-    def __init__(self, base_dir="D:/Dev/projetos vscode/SuggestAI/data"):
-        self.base_dir = base_dir
-        self.csv_path = os.path.join(base_dir, "usuarios_filmes.csv")
-        self.filmes_path = os.path.join(base_dir, "filmes.csv")
-        self.generos = self.carregar_generos()
-        self.usuarios = []
-        self.load_csv(self.csv_path)
-        self.user_index = {}  # map user_id → índice na lista para KNN/MF
-        self.build_user_index()
+    def __init__(self,
+                 users_file="data/usuarios_filmes.csv",
+                 movies_file="data/filmes.csv"):
+        self.users_file = users_file
+        self.movies_file = movies_file
 
-    def carregar_generos(self):
-        df = pd.read_csv(os.path.join(self.base_dir, "filmes.csv"))
-        return sorted(df["genero"].unique())
+        self.users = {}
+        self.movies = {}
 
-    def load_csv(self, path):
-        if os.path.exists(path):
-            df = pd.read_csv(path)
+        self._load_movies()
+        self._load_users()
+
+    # ----------------- IO -----------------
+    def _load_movies(self):
+        if os.path.exists(self.movies_file):
+            df = pd.read_csv(self.movies_file)
             for _, row in df.iterrows():
-                filmes = [row[f"filme{i}"] for i in range(1, 10) if pd.notna(row.get(f"filme{i}")) and row.get(f"filme{i}") != ""]
-                pesos = {g: row.get(g, 0.0) for g in self.generos}
-                self.usuarios.append({
-                    "user_id": str(row["user_id"]),
-                    "nome": row["nome"],
-                    "filmes": filmes,
-                    "pesos": pesos
-                })
+                title = str(row["filme"]).strip()
+                genre = str(row["genero"]).strip().lower()
+                self.movies[title] = _normalizar(genre)
+        else:
+            pd.DataFrame(columns=["filme", "genero"]).to_csv(self.movies_file, index=False)
 
-    def build_user_index(self):
-        self.user_index = {u["user_id"]: idx for idx, u in enumerate(self.usuarios)}
+    def _load_users(self):
+        if os.path.exists(self.users_file):
+            df = pd.read_csv(self.users_file)
+            for _, row in df.iterrows():
+                uid = str(row["user_id"])
+                nome = row.get("nome", "") if not pd.isna(row.get("nome", "")) else ""
+                filmes = []
+                for c in df.columns:
+                    if c.lower().startswith("filme") and not pd.isna(row.get(c)):
+                        filmes.append(str(row.get(c)).strip())
+                prefs = {}
+                for c in df.columns:
+                    lc = c.lower()
+                    if not (lc == "user_id" or lc == "nome" or lc.startswith("filme")):
+                        val = row.get(c)
+                        if pd.isna(val):
+                            continue
+                        try:
+                            prefs[_normalizar(c)] = float(val)
+                        except:
+                            pass
+                if not prefs:
+                    genres = set(self.movies.values())
+                    prefs = {g: 0.0 for g in genres}
 
-    def add_user_with_genres(self, nome, entrada):
+                self.users[uid] = {"nome": nome, "movies": filmes, "preferences": prefs}
+        else:
+            pd.DataFrame(columns=["user_id", "nome"]).to_csv(self.users_file, index=False)
+
+    def _ensure_genre_columns(self, prefs_keys):
+        if os.path.exists(self.users_file):
+            df = pd.read_csv(self.users_file)
+        else:
+            df = pd.DataFrame(columns=["user_id", "nome"])
+        for i in range(1, 10):
+            col = f"filme{i}"
+            if col not in df.columns:
+                df[col] = pd.NA
+        for g in prefs_keys:
+            if g not in df.columns:
+                df[g] = pd.NA
+        return df
+
+    def save_users(self):
+        all_genres = set()
+        for u in self.users.values():
+            all_genres.update(u["preferences"].keys())
+
+        base_df = self._ensure_genre_columns(all_genres)
+        rows = []
+        for uid, u in self.users.items():
+            linha = {"user_id": uid, "nome": u.get("nome", "")}
+            for i, f in enumerate(u.get("movies", [])[:9]):
+                linha[f"filme{i+1}"] = f
+            for g in all_genres:
+                linha[g] = u["preferences"].get(g, 0.0)
+            rows.append(linha)
+
+        out_df = pd.DataFrame(rows)
+        final_df = pd.concat([out_df], ignore_index=True, sort=False)
+        cols = ["user_id", "nome"] + [f"filme{i}" for i in range(1, 10)] + sorted(list(all_genres))
+        final_df = final_df.reindex(columns=cols)
+        final_df.to_csv(self.users_file, index=False)
+
+    def save_movies(self):
+        df = pd.DataFrame([{"filme": f, "genero": g} for f, g in self.movies.items()])
+        df["genero"] = df["genero"].apply(lambda x: _normalizar(x))
+        df.to_csv(self.movies_file, index=False)
+
+    # ----------------- user management -----------------
+    def add_user_with_genres(self, nome: str, entrada: str) -> str:
         filmes_do_usuario = []
         generos_novos = {}
 
         for item in entrada.split(","):
             if "-" in item:
-                nome_filme, genero = item.split("-", 1)
-                nome_filme = nome_filme.strip()
-                genero = genero.strip().lower()
-                filmes_do_usuario.append(nome_filme)
-                generos_novos[nome_filme] = genero
+                filme, genero = item.split("-", 1)
+                filme = filme.strip()
+                genero = _normalizar(genero.strip())
+                filmes_do_usuario.append(filme)
+                generos_novos[filme] = genero
 
         if len(filmes_do_usuario) < 3:
             raise ValueError("O usuário deve ter pelo menos 3 filmes.")
 
-        user_id = str(len(self.usuarios) + 1)
-        pesos = {g: (1.0 if g in generos_novos.values() else 0.0) for g in self.generos}
+        for f, g in generos_novos.items():
+            if f not in self.movies:
+                self.movies[f] = g
 
-        self.usuarios.append({
-            "user_id": user_id,
-            "nome": nome,
-            "filmes": filmes_do_usuario,
-            "pesos": pesos
-        })
-        self.user_index[user_id] = len(self.usuarios) - 1
+        all_genres = set(self.movies.values())
+        prefs = {g: 0.0 for g in all_genres}
+        for g in generos_novos.values():
+            prefs[g] = prefs.get(g, 0.0) + 1.0
 
-        self.salvar_csv(user_id, nome, filmes_do_usuario, pesos)
-        self.atualizar_filmes_csv(generos_novos)
-        return user_id
+        s = sum(prefs.values()) or 1.0
+        for g in prefs:
+            prefs[g] = prefs[g] / s
 
-    def salvar_csv(self, user_id, nome, filmes, pesos):
-        # monta o dicionário da nova linha
-        linha = {"user_id": user_id, "nome": nome}
-        for i, filme in enumerate(filmes[:9]):  # até 9 filmes
-            linha[f"filme{i+1}"] = filme
+        uid = str(len(self.users) + 1)
+        self.users[uid] = {"nome": nome, "movies": filmes_do_usuario, "preferences": prefs}
 
-        # se o arquivo existe, usamos as colunas dele
-        if os.path.exists(self.csv_path):
-            df = pd.read_csv(self.csv_path)
+        self.save_movies()
+        self.save_users()
+        return uid
 
-            # garante que só usa colunas que já existem
-            for col in df.columns:
-                if col in pesos:
-                    linha[col] = pesos[col]
-
-            # adiciona a nova linha ao dataframe
-            df = pd.concat([df, pd.DataFrame([linha])], ignore_index=True)
-        else:
-            # se não existe, cria com filmes + pesos que recebemos
-            linha.update(pesos)
-            df = pd.DataFrame([linha])
-
-        # salva o CSV sem duplicar cabeçalhos
-        df.to_csv(self.csv_path, index=False)
-
-
-    def atualizar_filmes_csv(self, novos_filmes):
-        if os.path.exists(self.filmes_path):
-            df = pd.read_csv(self.filmes_path)
-        else:
-            df = pd.DataFrame(columns=["filme", "genero"])
-
-        filmes_existentes = set(df["filme"].str.lower())
-        novos = []
-        for filme, genero in novos_filmes.items():
-            if filme.lower() not in filmes_existentes:
-                novos.append({"filme": filme, "genero": genero})
-
-        if novos:
-            df_novos = pd.DataFrame(novos)
-            df = pd.concat([df, df_novos], ignore_index=True)
-            df.to_csv(self.filmes_path, index=False)
-
-    def recommend_by_weights(self, user_id, top_n=3):
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario or not os.path.exists(self.filmes_path):
+    # ----------------- recommenders -----------------
+    def recommend_by_weights(self, user_id: str, top_n: int = 3):
+        if user_id not in self.users:
             return []
-
-        df_filmes = pd.read_csv(self.filmes_path)
-        recomendacoes = {}
-        for _, row in df_filmes.iterrows():
-            filme = row["filme"]
-            genero = row["genero"]
-            if filme in usuario["filmes"]:
+        u = self.users[user_id]
+        recs = {}
+        for f, g in self.movies.items():
+            if f in u["movies"]:
                 continue
-            score = usuario["pesos"].get(genero, 0.0)
+            score = u["preferences"].get(g, 0.0)
             if score > 0:
-                recomendacoes[filme] = score
+                recs[f] = score
+        sorted_items = sorted(recs.items(), key=lambda x: x[1], reverse=True)
+        return [t for t, _ in sorted_items[:top_n]]
 
-        recomendados = sorted(recomendacoes.items(), key=lambda x: x[1], reverse=True)
-        return [f for f, _ in recomendados[:top_n]]
-
-    def recommend_by_user_similarity(self, user_id, top_n=3):
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario or not os.path.exists(self.filmes_path):
+    def recommend_by_knn(self, user_id: str, top_n: int = 3, k: int = 3):
+        if user_id not in self.users:
             return []
 
-        df = pd.read_csv(self.filmes_path)
-        generos_usuario = set()
-        for filme in usuario["filmes"]:
-            linha = df[df["filme"].str.lower() == filme.lower()]
-            if not linha.empty:
-                generos_usuario.add(linha.iloc[0]["genero"])
+        all_genres = sorted(set(self.movies.values()))
+        ids = []
+        U = []
+        for uid, u in self.users.items():
+            ids.append(uid)
+            vec = [u["preferences"].get(g, 0.0) for g in all_genres]
+            U.append(vec)
+        U = np.array(U)
 
-        candidatos = []
-        for outro in self.usuarios:
-            if outro["user_id"] == user_id:
+        idx_target = ids.index(user_id)
+        target_vec = U[idx_target].reshape(1, -1)
+
+        # KNN com sklearn
+        knn = NearestNeighbors(n_neighbors=min(k+1, len(U)), metric='cosine')
+        knn.fit(U)
+        distances, neighbors_idx = knn.kneighbors(target_vec)
+
+        recomm = []
+        for i in neighbors_idx[0]:
+            if i == idx_target:
                 continue
-            generos_outro = set()
-            for filme in outro["filmes"]:
-                linha = df[df["filme"].str.lower() == filme.lower()]
-                if not linha.empty:
-                    generos_outro.add(linha.iloc[0]["genero"])
-            if generos_usuario & generos_outro:
-                candidatos.extend([f for f in outro["filmes"] if f not in usuario["filmes"]])
+            uid = ids[i]
+            for f in self.users[uid]["movies"]:
+                if f not in self.users[user_id]["movies"]:
+                    recomm.append(f)
+        # contar frequência e ordenar
+        if not recomm:
+            return []
+        series = pd.Series(recomm).value_counts()
+        return list(series.index[:top_n])
 
-        return list(pd.Series(candidatos).value_counts().index[:top_n])
-
-    def recommend_by_cluster(self, user_id, top_n=3):
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario:
+    def recommend_by_matrix_factorization(self, user_id: str, top_n: int = 3, n_factors: int = 2):
+        if user_id not in self.users:
             return []
 
-        filmes_usuario = set(usuario["filmes"])
-        recomendacoes = set()
-        for outro in self.usuarios:
-            if outro["user_id"] == user_id:
+        movies_list = list(self.movies.keys())
+        users_list = list(self.users.keys())
+
+        R = np.zeros((len(users_list), len(movies_list)), dtype=float)
+        for i, uid in enumerate(users_list):
+            for j, m in enumerate(movies_list):
+                if m in self.users[uid]["movies"]:
+                    R[i, j] = 1.0
+
+        try:
+            U, s, Vt = np.linalg.svd(R, full_matrices=False)
+        except np.linalg.LinAlgError:
+            return self.recommend_by_popularity(user_id, top_n)
+
+        k = min(n_factors, U.shape[1])
+        U_k = U[:, :k]
+        S_k = np.diag(s[:k])
+        Vt_k = Vt[:k, :]
+
+        R_hat = (U_k @ S_k) @ Vt_k
+        idx_u = users_list.index(user_id)
+        scores = R_hat[idx_u]
+
+        recs = {}
+        for j, m in enumerate(movies_list):
+            if m not in self.users[user_id]["movies"]:
+                recs[m] = scores[j]
+
+        if not recs:
+            return []
+
+        sorted_items = sorted(recs.items(), key=lambda x: x[1], reverse=True)
+        return [t for t, _ in sorted_items[:top_n]]
+
+    def recommend_by_user_similarity(self, user_id: str, top_n: int = 3):
+        if user_id not in self.users:
+            return []
+        target = self.users[user_id]
+        target_genres = set([self.movies[f] for f in target["movies"] if f in self.movies])
+        candidates = []
+        for uid, u in self.users.items():
+            if uid == user_id:
                 continue
-            filmes_outro = set(outro["filmes"])
-            intersecao = filmes_usuario & filmes_outro
-            if intersecao:
-                recomendacoes.update(filmes_outro - filmes_usuario)
-
-        return list(recomendacoes)[:top_n]
-
-    def recommend_by_popularity(self, user_id, top_n=3):
-        todos_filmes = []
-        for u in self.usuarios:
-            todos_filmes.extend(u["filmes"])
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario:
+            u_genres = set([self.movies[f] for f in u["movies"] if f in self.movies])
+            if target_genres & u_genres:
+                candidates.extend([f for f in u["movies"] if f not in target["movies"]])
+        if not candidates:
             return []
-        mais_comuns = pd.Series(todos_filmes).value_counts()
-        return [f for f in mais_comuns.index if f not in usuario["filmes"]][:top_n]
+        series = pd.Series(candidates).value_counts()
+        return list(series.index[:top_n])
 
-    def update_weights(self, user_id, filme, feedback):
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario:
+    def recommend_by_cluster(self, user_id: str, top_n: int = 3):
+        if user_id not in self.users:
+            return []
+        target_movies = set(self.users[user_id]["movies"])
+        recomm = set()
+        for uid, u in self.users.items():
+            if uid == user_id:
+                continue
+            inter = target_movies & set(u["movies"])
+            if inter:
+                recomm.update(set(u["movies"]) - target_movies)
+        return list(recomm)[:top_n]
+
+    def recommend_by_popularity(self, user_id: str, top_n: int = 3):
+        all_films = []
+        for u in self.users.values():
+            all_films.extend(u["movies"])
+        if not all_films:
+            return []
+        counts = pd.Series(all_films).value_counts()
+        recs = [f for f in counts.index if f not in self.users[user_id]["movies"]][:top_n]
+        return recs
+
+    def get_recommendations(self, user_id: str, top_n: int = 3):
+        methods = [
+            self.recommend_by_weights,
+            self.recommend_by_knn,
+            self.recommend_by_matrix_factorization,
+            self.recommend_by_user_similarity,
+            self.recommend_by_cluster,
+            self.recommend_by_popularity
+        ]
+        for m in methods:
+            try:
+                recs = m(user_id, top_n)
+            except TypeError:
+                recs = m(user_id)
+            if recs:
+                return recs
+        return []
+
+    # ----------------- feedback -----------------
+    def update_weights(self, user_id: str, filme: str, feedback: str):
+        if user_id not in self.users:
             return
-        df_filmes = pd.read_csv(self.filmes_path)
-        linha = df_filmes[df_filmes["filme"].str.lower() == filme.lower()]
-        if linha.empty:
+        filme_key = None
+        for f in self.movies.keys():
+            if f.lower() == filme.lower():
+                filme_key = f
+                break
+        if not filme_key:
             return
-        genero = linha.iloc[0]["genero"]
+        genero = self.movies[filme_key]
+        u = self.users[user_id]
+        if genero not in u["preferences"]:
+            u["preferences"][genero] = 0.0
         if feedback.lower() == "s":
-            usuario["pesos"][genero] += 0.1
+            u["preferences"][genero] += 0.1
         else:
-            usuario["pesos"][genero] = max(0.0, usuario["pesos"][genero] - 0.1)
-        self._atualizar_csv_pesos(usuario)
-
-    def _atualizar_csv_pesos(self, usuario):
-        df = pd.read_csv(self.csv_path)
-        idx = df.index[df["user_id"] == int(usuario["user_id"])]
-        if not idx.empty:
-            for g, p in usuario["pesos"].items():
-                df.at[idx[0], g] = p
-            df.to_csv(self.csv_path, index=False)
-
-    def recommend_by_knn(self, user_id, top_n=3):
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario:
-            return []
-
-        filmes_usuario = set(usuario["filmes"])
-        similar_scores = []
-        for outro in self.usuarios:
-            if outro["user_id"] == user_id:
-                continue
-            filmes_outro = set(outro["filmes"])
-            score = len(filmes_usuario & filmes_outro)
-            if score > 0:
-                similar_scores.append((score, outro["user_id"]))
-
-        similar_scores.sort(reverse=True)
-        recomendacoes = []
-        for _, uid in similar_scores:
-            outro = next(u for u in self.usuarios if u["user_id"] == uid)
-            recomendacoes.extend([f for f in outro["filmes"] if f not in filmes_usuario])
-
-        return list(pd.Series(recomendacoes).value_counts().index[:top_n])
-
-    def recommend_by_matrix_factorization(self, user_id, top_n=3):
-        usuario = next((u for u in self.usuarios if u["user_id"] == user_id), None)
-        if not usuario:
-            return []
-
-        df_filmes = pd.read_csv(self.filmes_path)
-        generos_usuario = [df_filmes[df_filmes["filme"].str.lower() == f.lower()]["genero"].values[0]
-                           for f in usuario["filmes"] if not df_filmes[df_filmes["filme"].str.lower() == f.lower()].empty]
-
-        todos_filmes = df_filmes[~df_filmes["filme"].isin(usuario["filmes"])]
-        todos_filmes["score"] = todos_filmes["genero"].apply(lambda g: generos_usuario.count(g))
-        recomendados = todos_filmes.sort_values("score", ascending=False)["filme"].tolist()
-        return recomendados[:top_n]
-
-    def get_recommendations(self, user_id, top_n=3):
-        recs_pesos = self.recommend_by_weights(user_id, top_n)
-        if recs_pesos:
-            return recs_pesos
-        recs_knn = self.recommend_by_knn(user_id, top_n)
-        if recs_knn:
-            return recs_knn
-        recs_mf = self.recommend_by_matrix_factorization(user_id, top_n)
-        if recs_mf:
-            return recs_mf
-        recs_user = self.recommend_by_user_similarity(user_id, top_n)
-        if recs_user:
-            return recs_user
-        recs_cluster = self.recommend_by_cluster(user_id, top_n)
-        if recs_cluster:
-            return recs_cluster
-        return self.recommend_by_popularity(user_id, top_n)
+            u["preferences"][genero] = max(0.0, u["preferences"][genero] - 0.1)
+        if feedback.lower() == "s" and filme_key not in u["movies"]:
+            u["movies"].append(filme_key)
+        total = sum(u["preferences"].values()) or 1.0
+        for g in u["preferences"]:
+            u["preferences"][g] = u["preferences"][g] / total
+        self.save_users()
