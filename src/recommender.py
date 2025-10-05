@@ -25,8 +25,8 @@ def _cosine_similarity_vec(a: np.ndarray, B: np.ndarray):
 
 class InteractiveRecommender:
     def __init__(self,
-                 users_file="data/usuarios_filmes.csv",
-                 movies_file="data/filmes.csv"):
+                 users_file="D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv",
+                 movies_file="D:/Dev/projetos vscode/SuggestAI/data/filmes.csv"):
         self.users_file = users_file
         self.movies_file = movies_file
 
@@ -141,9 +141,11 @@ class InteractiveRecommender:
         for g in generos_novos.values():
             prefs[g] = prefs.get(g, 0.0) + 1.0
 
-        s = sum(prefs.values()) or 1.0
         for g in prefs:
-            prefs[g] = prefs[g] / s
+            prefs[g] = 0.1 + prefs[g]  # adiciona peso mínimo
+        total = sum(prefs.values()) or 1.0
+        for g in prefs:
+            prefs[g] /= total
 
         uid = str(len(self.users) + 1)
         self.users[uid] = {"nome": nome, "movies": filmes_do_usuario, "preferences": prefs}
@@ -167,7 +169,7 @@ class InteractiveRecommender:
         sorted_items = sorted(recs.items(), key=lambda x: x[1], reverse=True)
         return [t for t, _ in sorted_items[:top_n]]
 
-    def recommend_by_knn(self, user_id: str, top_n: int = 3, k: int = 3):
+    def recommend_by_knn(self, user_id: str, top_n: int = 5, k: int = 2):
         if user_id not in self.users:
             return []
 
@@ -183,8 +185,8 @@ class InteractiveRecommender:
         idx_target = ids.index(user_id)
         target_vec = U[idx_target].reshape(1, -1)
 
-        # KNN com sklearn
-        knn = NearestNeighbors(n_neighbors=min(k+1, len(U)), metric='cosine')
+        k_adj = min(k, len(U)-1) or 1
+        knn = NearestNeighbors(n_neighbors=k_adj+1, metric='cosine')
         knn.fit(U)
         distances, neighbors_idx = knn.kneighbors(target_vec)
 
@@ -196,13 +198,12 @@ class InteractiveRecommender:
             for f in self.users[uid]["movies"]:
                 if f not in self.users[user_id]["movies"]:
                     recomm.append(f)
-        # contar frequência e ordenar
         if not recomm:
             return []
         series = pd.Series(recomm).value_counts()
         return list(series.index[:top_n])
 
-    def recommend_by_matrix_factorization(self, user_id: str, top_n: int = 3, n_factors: int = 2):
+    def recommend_by_matrix_factorization(self, user_id: str, top_n: int = 5, n_factors: int = 3):
         if user_id not in self.users:
             return []
 
@@ -280,8 +281,13 @@ class InteractiveRecommender:
         recs = [f for f in counts.index if f not in self.users[user_id]["movies"]][:top_n]
         return recs
 
-    def get_recommendations(self, user_id: str, top_n: int = 3):
-        methods = [
+    # ----------------- get_recommendations atualizado -----------------
+    def get_recommendations(self, user_id: str, top_n: int = 5):
+        if user_id not in self.users:
+            return []
+
+        scores = {}
+        recomendadores = [
             self.recommend_by_weights,
             self.recommend_by_knn,
             self.recommend_by_matrix_factorization,
@@ -289,14 +295,21 @@ class InteractiveRecommender:
             self.recommend_by_cluster,
             self.recommend_by_popularity
         ]
-        for m in methods:
+
+        for metodo in recomendadores:
             try:
-                recs = m(user_id, top_n)
+                recs = metodo(user_id, top_n=top_n)
             except TypeError:
-                recs = m(user_id)
-            if recs:
-                return recs
-        return []
+                recs = metodo(user_id)
+
+            for i, f in enumerate(recs):
+                scores[f] = scores.get(f, 0) + (top_n - i)
+
+        if not scores:
+            return []
+
+        sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        return [f for f, _ in sorted_items[:top_n]]
 
     # ----------------- feedback -----------------
     def update_weights(self, user_id: str, filme: str, feedback: str):
