@@ -11,7 +11,6 @@ def _normalizar(texto: str) -> str:
     return unicodedata.normalize("NFKD", t).encode("ASCII", "ignore").decode("utf-8")
 
 def _cosine_similarity_vec(a: np.ndarray, B: np.ndarray):
-    """a : (d,), B: (n, d) -> returns (n,) cosine similarity a·B_i / (|a||B_i|)"""
     if B.size == 0:
         return np.array([])
     a = a.astype(float)
@@ -24,15 +23,12 @@ def _cosine_similarity_vec(a: np.ndarray, B: np.ndarray):
     return sims
 
 class InteractiveRecommender:
-    def __init__(self,
-                 users_file="D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv",
+    def __init__(self, users_file="D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv",
                  movies_file="D:/Dev/projetos vscode/SuggestAI/data/filmes.csv"):
         self.users_file = users_file
         self.movies_file = movies_file
-
         self.users = {}
         self.movies = {}
-
         self._load_movies()
         self._load_users()
 
@@ -71,7 +67,6 @@ class InteractiveRecommender:
                 if not prefs:
                     genres = set(self.movies.values())
                     prefs = {g: 0.0 for g in genres}
-
                 self.users[uid] = {"nome": nome, "movies": filmes, "preferences": prefs}
         else:
             pd.DataFrame(columns=["user_id", "nome"]).to_csv(self.users_file, index=False)
@@ -94,7 +89,6 @@ class InteractiveRecommender:
         all_genres = set()
         for u in self.users.values():
             all_genres.update(u["preferences"].keys())
-
         base_df = self._ensure_genre_columns(all_genres)
         rows = []
         for uid, u in self.users.items():
@@ -104,7 +98,6 @@ class InteractiveRecommender:
             for g in all_genres:
                 linha[g] = u["preferences"].get(g, 0.0)
             rows.append(linha)
-
         out_df = pd.DataFrame(rows)
         final_df = pd.concat([out_df], ignore_index=True, sort=False)
         cols = ["user_id", "nome"] + [f"filme{i}" for i in range(1, 10)] + sorted(list(all_genres))
@@ -120,7 +113,6 @@ class InteractiveRecommender:
     def add_user_with_genres(self, nome: str, entrada: str) -> str:
         filmes_do_usuario = []
         generos_novos = {}
-
         for item in entrada.split(","):
             if "-" in item:
                 filme, genero = item.split("-", 1)
@@ -128,34 +120,28 @@ class InteractiveRecommender:
                 genero = _normalizar(genero.strip())
                 filmes_do_usuario.append(filme)
                 generos_novos[filme] = genero
-
-        if len(filmes_do_usuario) < 3:
-            raise ValueError("O usuário deve ter pelo menos 3 filmes.")
-
+        if len(filmes_do_usuario) < 1:
+            raise ValueError("O usuário deve ter pelo menos 1 filme.")
         for f, g in generos_novos.items():
             if f not in self.movies:
                 self.movies[f] = g
-
         all_genres = set(self.movies.values())
         prefs = {g: 0.0 for g in all_genres}
         for g in generos_novos.values():
             prefs[g] = prefs.get(g, 0.0) + 1.0
-
         for g in prefs:
-            prefs[g] = 0.1 + prefs[g]  # adiciona peso mínimo
+            prefs[g] = 0.1 + prefs[g]
         total = sum(prefs.values()) or 1.0
         for g in prefs:
             prefs[g] /= total
-
         uid = str(len(self.users) + 1)
         self.users[uid] = {"nome": nome, "movies": filmes_do_usuario, "preferences": prefs}
-
         self.save_movies()
         self.save_users()
         return uid
 
     # ----------------- recommenders -----------------
-    def recommend_by_weights(self, user_id: str, top_n: int = 3):
+    def recommend_by_weights(self, user_id: str, top_n: int = 5):
         if user_id not in self.users:
             return []
         u = self.users[user_id]
@@ -172,7 +158,6 @@ class InteractiveRecommender:
     def recommend_by_knn(self, user_id: str, top_n: int = 5, k: int = 2):
         if user_id not in self.users:
             return []
-
         all_genres = sorted(set(self.movies.values()))
         ids = []
         U = []
@@ -181,15 +166,12 @@ class InteractiveRecommender:
             vec = [u["preferences"].get(g, 0.0) for g in all_genres]
             U.append(vec)
         U = np.array(U)
-
         idx_target = ids.index(user_id)
         target_vec = U[idx_target].reshape(1, -1)
-
         k_adj = min(k, len(U)-1) or 1
         knn = NearestNeighbors(n_neighbors=k_adj+1, metric='cosine')
         knn.fit(U)
         distances, neighbors_idx = knn.kneighbors(target_vec)
-
         recomm = []
         for i in neighbors_idx[0]:
             if i == idx_target:
@@ -206,38 +188,30 @@ class InteractiveRecommender:
     def recommend_by_matrix_factorization(self, user_id: str, top_n: int = 5, n_factors: int = 3):
         if user_id not in self.users:
             return []
-
         movies_list = list(self.movies.keys())
         users_list = list(self.users.keys())
-
         R = np.zeros((len(users_list), len(movies_list)), dtype=float)
         for i, uid in enumerate(users_list):
             for j, m in enumerate(movies_list):
                 if m in self.users[uid]["movies"]:
                     R[i, j] = 1.0
-
         try:
             U, s, Vt = np.linalg.svd(R, full_matrices=False)
         except np.linalg.LinAlgError:
             return self.recommend_by_popularity(user_id, top_n)
-
         k = min(n_factors, U.shape[1])
         U_k = U[:, :k]
         S_k = np.diag(s[:k])
         Vt_k = Vt[:k, :]
-
         R_hat = (U_k @ S_k) @ Vt_k
         idx_u = users_list.index(user_id)
         scores = R_hat[idx_u]
-
         recs = {}
         for j, m in enumerate(movies_list):
             if m not in self.users[user_id]["movies"]:
                 recs[m] = scores[j]
-
         if not recs:
             return []
-
         sorted_items = sorted(recs.items(), key=lambda x: x[1], reverse=True)
         return [t for t, _ in sorted_items[:top_n]]
 
@@ -285,7 +259,6 @@ class InteractiveRecommender:
     def get_recommendations(self, user_id: str, top_n: int = 5):
         if user_id not in self.users:
             return []
-
         scores = {}
         recomendadores = [
             self.recommend_by_weights,
@@ -295,19 +268,15 @@ class InteractiveRecommender:
             self.recommend_by_cluster,
             self.recommend_by_popularity
         ]
-
         for metodo in recomendadores:
             try:
                 recs = metodo(user_id, top_n=top_n)
             except TypeError:
                 recs = metodo(user_id)
-
             for i, f in enumerate(recs):
                 scores[f] = scores.get(f, 0) + (top_n - i)
-
         if not scores:
             return []
-
         sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [f for f, _ in sorted_items[:top_n]]
 
