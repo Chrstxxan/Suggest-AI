@@ -5,7 +5,7 @@ from collections import defaultdict
 import unicodedata
 from sklearn.neighbors import NearestNeighbors
 
-# -------- util --------
+# -------- geralzao --------
 def _normalizar(texto: str) -> str:
     t = texto.lower().strip()
     return unicodedata.normalize("NFKD", t).encode("ASCII", "ignore").decode("utf-8")
@@ -76,7 +76,7 @@ class InteractiveRecommender:
             df = pd.read_csv(self.users_file)
         else:
             df = pd.DataFrame(columns=["user_id", "nome"])
-        for i in range(1, 10):
+        for i in range(1, 8):
             col = f"filme{i}"
             if col not in df.columns:
                 df[col] = pd.NA
@@ -93,14 +93,14 @@ class InteractiveRecommender:
         rows = []
         for uid, u in self.users.items():
             linha = {"user_id": uid, "nome": u.get("nome", "")}
-            for i, f in enumerate(u.get("movies", [])[:9]):
+            for i, f in enumerate(u.get("movies", [])[:7]):
                 linha[f"filme{i+1}"] = f
             for g in all_genres:
                 linha[g] = u["preferences"].get(g, 0.0)
             rows.append(linha)
         out_df = pd.DataFrame(rows)
         final_df = pd.concat([out_df], ignore_index=True, sort=False)
-        cols = ["user_id", "nome"] + [f"filme{i}" for i in range(1, 10)] + sorted(list(all_genres))
+        cols = ["user_id", "nome"] + [f"filme{i}" for i in range(1, 8)] + sorted(list(all_genres))
         final_df = final_df.reindex(columns=cols)
         final_df.to_csv(self.users_file, index=False)
 
@@ -109,7 +109,7 @@ class InteractiveRecommender:
         df["genero"] = df["genero"].apply(lambda x: _normalizar(x))
         df.to_csv(self.movies_file, index=False)
 
-    # ----------------- user management -----------------
+    # ----------------- gerenciamento de usuario -----------------
     def add_user_with_genres(self, nome: str, entrada: str) -> str:
         filmes_do_usuario = []
         generos_novos = {}
@@ -140,7 +140,7 @@ class InteractiveRecommender:
         self.save_users()
         return uid
 
-    # ----------------- recommenders -----------------
+    # ----------------- metofos de recomendacao -----------------
     def recommend_by_weights(self, user_id: str, top_n: int = 5):
         if user_id not in self.users:
             return []
@@ -255,7 +255,7 @@ class InteractiveRecommender:
         recs = [f for f in counts.index if f not in self.users[user_id]["movies"]][:top_n]
         return recs
 
-    # ----------------- get_recommendations atualizado -----------------
+    # ----------------- recomendadores unificados para recomendar -----------------
     def get_recommendations(self, user_id: str, top_n: int = 5):
         if user_id not in self.users:
             return []
@@ -280,7 +280,7 @@ class InteractiveRecommender:
         sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [f for f, _ in sorted_items[:top_n]]
 
-    # ----------------- feedback -----------------
+    # ----------------- feedback do usuario-----------------
     def update_weights(self, user_id: str, filme: str, feedback: str):
         if user_id not in self.users:
             return
