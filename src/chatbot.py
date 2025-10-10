@@ -106,6 +106,9 @@ def recomendar_filmes_por_genero(generos_usuario, filmes_df, qtd):
         if all(len(lista) == 0 for lista in filmes_por_genero.values()):
             break
 
+    # Embaralha as recomendações finais para não ficarem sempre na mesma ordem
+    random.shuffle(recomendacoes)
+
     # Atualiza o registro global de filmes recomendados
     filmes_recomendados_global.update(recomendacoes)
 
@@ -142,6 +145,9 @@ def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: 
         filmes_disponiveis = [f for f, g in recommender.movies.items() if g not in aversoes]
         if not filmes_disponiveis:
             return "Não há filmes disponíveis fora dos gêneros que você rejeitou."
+
+        # ✅ Embaralha antes de recomendar (para variar os resultados)
+        random.shuffle(filmes_disponiveis)
 
         # mantém fluxo normal (feedback + salvamento)
         recs = filmes_disponiveis[:quantos_por_rodada]
@@ -189,6 +195,10 @@ def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: 
             for g in gostos
         }
 
+        # ✅ Embaralha filmes de cada gênero antes de misturar
+        for g in filmes_por_genero:
+            random.shuffle(filmes_por_genero[g])
+
         filmes_equilibrados = []
         while len(filmes_equilibrados) < quantos_por_rodada and any(filmes_por_genero.values()):
             for g in gostos:
@@ -200,6 +210,9 @@ def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: 
         if not filmes_equilibrados:
             print("Não há mais filmes disponíveis nesses gêneros.")
             break
+
+        # ✅ Embaralha o conjunto final antes de exibir
+        random.shuffle(filmes_equilibrados)
 
         recs_filtradas = reforcar_por_genero(filmes_equilibrados, gostos, recommender.movies, top_n=quantos_por_rodada)
         print(f"\nBaseado no que você disse, recomendo: {', '.join(recs_filtradas)}\n")
