@@ -1,73 +1,11 @@
-user_id,nome,filme1,filme2,filme3,filme4,filme5,filme6,filme7,acao,comedia,drama,ficcao cientifica,romance,suspense,terror
-1,João,Titanic,Matrix,Avatar 2,,,,,0.7,0.0,0.0,0.6,0.8,0.0,0.0
-2,Maria,10 Coisas que eu odeio em você,Diário de uma paixão,Lagoa Azul,,,,,0.0,0.7,0.6,0.0,0.8,0.0,0.0
-3,Marcos,Inception,Interestelar,Gladiador,,,,,0.7,0.0,0.0,0.9,0.0,0.0,0.0
-4,Cláudio,Inception,Interestelar,Matrix,,,,,0.6,0.0,0.0,0.9,0.0,0.0,0.0
-5,Marcela,Titanic,Diário de uma paixão,Matrix,,,,,0.5,0.0,0.0,0.5,0.7,0.0,0.0
-6,Carlos,Capitão América: Soldado Invernal,John Wick 4,Matrix,,,,,0.8,0.0,0.0,0.4,0.0,0.0,0.0
-7,Paula,Vingadores: Ultimato,Titanic,Homem de Ferro 2,,,,,0.9,0.0,0.0,0.3,0.7,0.0,0.0
-8,Nicole,Invocação do Mal 4,Titanic,Velozes e Furiosos 7,,,,,0.8,0.0,0.0,0.2,0.6,0.0,0.9
-9,Renata,O Fabuloso Destino de Amélie Poulain,A Bruxa,Her,,,,,0.0,0.7,0.0,0.0,0.0,0.6,0.8
-10,Cintia,Inception,O Grande Truque,Matrix,,,,,0.7,0.0,0.4,0.8,0.0,0.0,0.0
-11,Bruno,Vingadores: Ultimato,Capitão América: Soldado Invernal,Homem de Ferro 2,,,,,0.9,0.0,0.0,0.3,0.0,0.0,0.0
-12,Nathan,Cidade de Deus,O Iluminado,A Origem,,,,,0.0,0.0,0.9,0.7,0.0,0.0,0.6
-13,Marcos,Vingadores: Ultimato,Gladiador,A Origem,,,,,0.8,0.0,0.7,0.5,0.0,0.0,0.0
-14,Ana Carolina,Invocação do Mal 4,O Iluminado,A Bruxa,,,,,0.0,0.6,0.0,0.0,0.0,0.7,0.9
-15,Beatriz,10 Coisas que eu odeio em você,O Fabuloso Destino de Amélie Poulain,Matrix,,,,,0.5,0.6,0.0,0.7,0.6,0.0,0.0
-16,Gabriela,Jojo Rabbit,O Grande Hotel Budapeste,Snatch: Porcos e Diamantes,,,,,0.0,0.8,0.0,0.0,0.0,0.7,0.0
-17,Rafaela,Lista de Schindler,Forrest Gump: O Contador de Histórias,Clube da Luta,,,,,0.0,0.0,0.8,0.7,0.0,0.0,0.0
-18,Henrique,Manchester à Beira,Réquiem para um Sonho,Magnólia,,,,,0.0,0.0,0.9,0.8,0.0,0.0,0.0
-19,William,Manchester à Beira,Réquiem para um Sonho,Magnólia,,,,,0.0,0.0,0.9,0.8,0.0,0.0,0.0
-20,Igor,Magnólia,Manchester à Beira,Réquiem para um Sonho,,,,,0.0,0.0,0.8,0.7,0.0,0.0,0.0
-21,Ana,Vingadores: Ultimato,Inception,Titanic,,,,,0.8,0.0,0.0,0.6,0.7,0.0,0.0
-22,Breno,Matrix,Gladiador,Interestelar,,,,,0.7,0.0,0.0,0.8,0.0,0.0,0.0
-23,Camila,Diário de uma paixão,Lagoa Azul,10 Coisas que eu odeio em você,,,,,0.0,0.7,0.6,0.0,0.8,0.0,0.0
-24,Daniel,Capitão América: Soldado Invernal,John Wick 4,Vingadores: Ultimato,,,,,0.9,0.0,0.0,0.5,0.0,0.0,0.0
-25,Elisa,O Fabuloso Destino de Amélie Poulain,Jojo Rabbit,O Grande Hotel Budapeste,,,,,0.0,0.8,0.0,0.0,0.0,0.7,0.0
-26,Felipe,Inception,A Origem,Matrix,,,,,0.7,0.0,0.0,0.9,0.0,0.0,0.0
-27,Gabriel,Lista de Schindler,Clube da Luta,Gladiador,,,,,0.0,0.0,0.8,0.6,0.0,0.0,0.0
-28,Heloísa,Tár,Drive My Car,A Favorita,,,,,0.0,0.0,0.7,0.8,0.0,0.0,0.0
-29,Ivan,A Noite do Diabo,Hereditário,O Homem nas Trevas,,,,,0.0,0.0,0.0,0.0,0.0,0.8,0.9
-30,Julia,Forrest Gump: O Contador de Histórias,Manchester à Beira,Lista de Schindler,,,,,0.0,0.0,0.8,0.0,0.0,0.0,0.0
-31,Kevin,Titanic,Matrix,Inception,,,,,0.6,0.0,0.0,0.8,0.7,0.0,0.0
-32,Larissa,10 Coisas que eu odeio em você,Diário de uma paixão,Avatar 2,,,,,0.0,0.7,0.0,0.5,0.8,0.0,0.0
-33,Marcelo,Vingadores: Ultimato,Gladiador,Capitão América: Soldado Invernal,,,,,0.9,0.0,0.0,0.5,0.0,0.0,0.0
-34,Nicole,O Iluminado,A Bruxa,Invocação do Mal 4,,,,,0.0,0.0,0.0,0.0,0.0,0.8,0.9
-35,Otávio,Interestelar,Matrix,Inception,,,,,0.8,0.0,0.0,0.9,0.0,0.0,0.0
-36,Patrícia,Titanic,Diário de uma paixão,Lagoa Azul,,,,,0.0,0.6,0.0,0.5,0.8,0.0,0.0
-37,Quintino,John Wick 4,Vingadores: Ultimato,Capitão América: Soldado Invernal,,,,,0.9,0.0,0.0,0.4,0.0,0.0,0.0
-38,Rafaela,O Fabuloso Destino de Amélie Poulain,Jojo Rabbit,Snatch: Porcos e Diamantes,,,,,0.0,0.8,0.0,0.0,0.0,0.7,0.0
-39,Samuel,Gladiador,Clube da Luta,Lista de Schindler,,,,,0.8,0.0,0.7,0.0,0.0,0.0,0.0
-40,Tatiane,Magnólia,Manchester à Beira,Réquiem para um Sonho,,,,,0.0,0.0,0.9,0.7,0.0,0.0,0.0
-41,Ursula,Tár,Drive My Car,A Favorita,,,,,0.0,0.0,0.7,0.8,0.0,0.0,0.0
-42,Victor,A Noite do Diabo,Hereditário,O Homem nas Trevas,,,,,0.0,0.0,0.0,0.0,0.0,0.8,0.9
-43,Will,Forrest Gump: O Contador de Histórias,Manchester à Beira,Lista de Schindler,,,,,0.0,0.0,0.8,0.0,0.0,0.0,0.0
-44,Xavier,Titanic,Matrix,Inception,,,,,0.6,0.0,0.0,0.8,0.7,0.0,0.0
-45,Yasmin,10 Coisas que eu odeio em você,Diário de uma paixão,Avatar 2,,,,,0.0,0.7,0.0,0.5,0.8,0.0,0.0
-46,Zeca,Vingadores: Ultimato,Gladiador,Capitão América: Soldado Invernal,,,,,0.9,0.0,0.0,0.5,0.0,0.0,0.0
-47,Alice,O Iluminado,A Bruxa,Invocação do Mal 4,,,,,0.0,0.0,0.0,0.0,0.0,0.8,0.9
-48,Breno,Interestelar,Matrix,Inception,,,,,0.8,0.0,0.0,0.9,0.0,0.0,0.0
-49,Everaldo,O Homem nas Trevas,Invocação do Mal 4,A Bruxa,,,,,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0,0.8611111111111112
-50,Rafael,Gladiador,Vingadores: Ultimato,John Wick 4,,,,,0.8611111111111112,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0,0.0277777777777777
-51,Ivan,A Noite do Diabo,Hereditário,O Homem nas Trevas,,,,,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0,0.8611111111111112
-52,Gabriela,Clube da Luta,Cidade de Deus,Velozes e Furiosos 7,,,,,0.8611111111111112,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0277777777777777,0.0,0.0277777777777777
-53,Antonio,O Pianista,Antes do Amanhecer,O Segredo de Brokeback Mountain,Moonlight,Suspiria,Halloween: A noite do terror,It: a coisa,0.0131578947368421,0.0131578947368421,0.5394736842105263,0.0131578947368421,0.0131578947368421,0.0,0.4078947368421053
-54,Marcella,Superbad,A mentira,As Branquelas,O Grande Lebowski,Diário de Bridget Jones,Como Perder um Homem em 10 dias,Orgulho e Preconceito,0.0131578947368421,0.5394736842105263,0.0131578947368421,0.0131578947368421,0.4078947368421053,0.0,0.0131578947368421
-55,Gabriel,Capitão América: Soldado Invernal,Snatch: Porcos e Diamantes,O Grande Hotel Budapeste,Jojo Rabbit,Superbad,A mentira,As Branquelas,0.2763157894736842,0.6710526315789473,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.0131578947368421
-56,Henry,Lista de Schindler,O Grande Hotel Budapeste,Forrest Gump: O Contador de Histórias,Jojo Rabbit,Drive My Car,Superbad,Tár,0.0131578947368421,0.4078947368421053,0.5394736842105263,0.0131578947368421,0.0131578947368421,0.0,0.0131578947368421
-57,Tania,Titanic,Matrix,Interestelar,O Iluminado,A Noite do Diabo,,,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.375,0.1964285714285714,0.0,0.375
-58,Otavio,O Iluminado,A Noite do Diabo,Invocação do Mal 4,A Bruxa,Suspiria,,,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.0,0.9107142857142856
-59,Tamiris,Titanic,Matrix,Avatar 2,Inception,Interestelar,Gladiador,Vingadores: Ultimato,0.2763157894736842,0.0131578947368421,0.0131578947368421,0.5394736842105263,0.1447368421052631,0.0,0.0131578947368421
-60,Igor,Velozes e Furiosos 7,Capitão América: Soldado Invernal,Gladiador,Homem de Ferro 2,Snatch: Porcos e Diamantes,Vingadores: Ultimato,Cidade de Deus,0.9342105263157896,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.0131578947368421
-61,Gabriela,O Homem nas Trevas,Hereditário,A Noite do Diabo,O Iluminado,Suspiria,It: a coisa,Invocação do Mal 4,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.9342105263157896
-62,Julia,Gladiador,O Iluminado,Vingadores: Ultimato,A Noite do Diabo,John Wick 4,Hereditário,Clube da Luta,0.5394736842105263,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.4078947368421053
-63,Marcos,Titanic,Matrix,Avatar 2,Inception,Interestelar,Diário de uma paixão,Lista de Schindler,0.0131578947368421,0.0131578947368421,0.1447368421052631,0.5394736842105263,0.2763157894736842,0.0,0.0131578947368421
-64,Victor,Lista de Schindler,Forrest Gump: O Contador de Histórias,Drive My Car,Tár,A Favorita,Manchester à Beira,Réquiem para um Sonho,0.0131578947368421,0.0131578947368421,0.9342105263157896,0.0131578947368421,0.0131578947368421,0.0,0.0131578947368421
-65,Roberta,Clube da Luta,Jojo Rabbit,Vingadores: Ultimato,O Grande Hotel Budapeste,Snatch: Porcos e Diamantes,O Grande Lebowski,Capitão América: Soldado Invernal,0.5394736842105263,0.4078947368421053,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.0131578947368421
-66,Tony,Forrest Gump: O Contador de Histórias,Suspiria,O Segredo de Brokeback Mountain,Halloween: A noite do terror,O Pianista,O Iluminado,,0.0151515151515151,0.0151515151515151,0.4696969696969696,0.0151515151515151,0.0151515151515151,0.0,0.4696969696969696
-67,Ronaldo,Tár,Moonlight,Lista de Schindler,Drive My Car,Magnólia,Réquiem para um Sonho,Manchester à Beira,0.0131578947368421,0.0131578947368421,0.9342105263157896,0.0131578947368421,0.0131578947368421,0.0,0.0131578947368421
-68,Natanael,Gladiador,Vingadores: Ultimato,John Wick 4,O Iluminado,A Noite do Diabo,Hereditário,O Homem nas Trevas,0.4078947368421053,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.5394736842105263
-69,Everaldo,Matrix,Gladiador,Avatar 2,Vingadores: Ultimato,Inception,John Wick 4,,0.4696969696969696,0.0151515151515151,0.0151515151515151,0.4696969696969696,0.0151515151515151,0.0,0.0151515151515151
-70,Alberto,Clube da Luta,Cidade de Deus,Velozes e Furiosos 7,Homem de Ferro 2,,,,0.8913043478260869,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0,0.0217391304347826
-71,Polidoro,O Iluminado,O Grande Hotel Budapeste,A Noite do Diabo,Jojo Rabbit,Hereditário,Superbad,O Homem nas Trevas,0.0131578947368421,0.4078947368421053,0.0131578947368421,0.0131578947368421,0.0131578947368421,0.0,0.5394736842105263
-72,Julio,A Favorita,Invocação do Mal 4,Halloween: A noite do terror,A Bruxa,Jojo Rabbit,Superbad,O Segredo de Brokeback Mountain,0.013157894736842105,0.2763157894736842,0.2763157894736842,0.013157894736842105,0.013157894736842105,0.0,0.40789473684210525
+user_id,nome,filme1,filme2,filme3,filme4,filme5,filme6,filme7,acao,comedia,drama,ficcao cientifica,romance,terror
+1,Paula,Diário de Bridget Jones,Como Perder um Homem em 10 dias,10 Coisas que eu odeio em você,Diário de uma paixão,Titanic,,,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.9107142857142856,0.0178571428571428
+2,Otavio,O Homem nas Trevas,Hereditário,O Iluminado,Invocação do Mal 4,,,,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.8913043478260869
+3,Igor,Inception,A Origem,O Grande Truque,Matrix,,,,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.8913043478260869,0.0217391304347826,0.0217391304347826
+4,Gabriela,O Grande Truque,Manchester à Beira,Réquiem para um Sonho,Interestelar,Matrix,,,0.0178571428571428,0.0178571428571428,0.375,0.5535714285714285,0.0178571428571428,0.0178571428571428
+5,Henrique,Invocação do Mal 4,A mentira,Hereditário,Superbad,O Grande Lebowski,,,0.0178571428571428,0.5535714285714285,0.0178571428571428,0.0178571428571428,0.0178571428571428,0.375
+6,Júlia,O Grande Lebowski,O Grande Hotel Budapeste,As Branquelas,Superbad,,,,0.0217391304347826,0.8913043478260869,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0217391304347826
+7,Marcella,Hereditário,O Iluminado,Invocação do Mal 4,Suspiria,,,,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.0217391304347826,0.8913043478260869
+8,Rafael,Antes do Amanhecer,Drive My Car,Hereditário,Invocação do Mal 4,,,,0.0217391304347826,0.0217391304347826,0.4565217391304347,0.0217391304347826,0.0217391304347826,0.4565217391304347
+9,Renata,Réquiem para um Sonho,A Origem,Inception,Magnólia,Moonlight,,,0.0178571428571428,0.0178571428571428,0.5535714285714285,0.375,0.0178571428571428,0.0178571428571428
+10,Viviane,Gladiador,Mad Max: Estrada da Fúria,O Exorcista,Coringa,O Iluminado,Whiplash,Kill Bill: Vol1,0.23544886056092723,0.011219567428231455,0.33775430664217687,0.0,0.011219567428231455,0.404357697940433
