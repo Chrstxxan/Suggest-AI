@@ -257,7 +257,7 @@ class InteractiveRecommender:
         return recs
 
     # ----------------- recomendadores unificados para recomendar -----------------
-    def get_recommendations(self, user_id: str, top_n: int = 5):
+    def get_recommendations(self, user_id: str, top_n: int = 15):
         if user_id not in self.users:
             return []
 

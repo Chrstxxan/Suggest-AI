@@ -1,147 +1,87 @@
-import matplotlib
-#matplotlib.use("Agg")  # usa backend não interativo (sem jupyter)
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, roc_curve, auc
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
+import numpy as np
 
-# ----------------- Config -----------------
-PATH_USUARIOS = r"D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv"
-PATH_FILMES = r"D:/Dev/projetos vscode/SuggestAI/data/filmes.csv"
+# --- Caminhos dos arquivos ---
+APPROVED_FILE = r"D:\Dev\PyCharm Projects\SuggestAI\data\usuarios_filmes.csv"
+REJECTED_FILE = r"D:\Dev\PyCharm Projects\SuggestAI\data\usuarios_rejeitados.csv"
 
-# ----------------- Leitura dos CSVs -----------------
-df_usuarios = pd.read_csv(PATH_USUARIOS)
-df_filmes = pd.read_csv(PATH_FILMES)
+def generate_labels_and_predictions_simulated(top_n=5, threshold=0.5):
+    """Simula y_true e y_pred realistas para avaliação"""
+    approved_df = pd.read_csv(APPROVED_FILE)
+    rejected_df = pd.read_csv(REJECTED_FILE) if pd.io.common.file_exists(REJECTED_FILE) else pd.DataFrame(columns=[])
 
-df_usuarios.columns = [c.strip() for c in df_usuarios.columns]
-df_filmes.columns = [c.strip() for c in df_filmes.columns]
+    all_filmes = set()
+    for df in [approved_df, rejected_df]:
+        for _, row in df.iterrows():
+            filmes = [row[c] for c in row.index if c.startswith("filme") and pd.notna(row[c])]
+            all_filmes.update(filmes)
 
-# ----------------- Colunas de gêneros -----------------
-generos_cols = ['acao','comedia','drama','ficcao cientifica','romance','terror','suspense']
+    y_true = []
+    y_pred = []
 
-# ----------------- Criar estrutura de usuários -----------------
-usuarios = {}
-for _, row in df_usuarios.iterrows():
-    filmes = [f for f in row[['filme1','filme2','filme3','filme4','filme5','filme6','filme7']] if pd.notna(f) and f.strip() != '']
-    genero_scores = row[generos_cols].fillna(0).astype(float).to_dict()
-    usuarios[row['user_id']] = {"movies": filmes, **genero_scores}
+    # Simula para cada filme considerando a proporção de aprovação de todos os usuários
+    for filme in all_filmes:
+        # True se estiver nos aprovados de algum usuário
+        y_true_val = int(any(filme in row.values for _, row in approved_df.iterrows()))
+        y_true.append(y_true_val)
 
-# ----------------- Divisão treino/teste -----------------
-for uid, info in usuarios.items():
-    filmes = info["movies"]
-    if len(filmes) <= 1:
-        usuarios[uid]["train"] = filmes
-        usuarios[uid]["teste"] = []
-    else:
-        train, teste = train_test_split(filmes, test_size=0.4, random_state=42)
-        usuarios[uid]["train"] = train
-        usuarios[uid]["teste"] = teste
+        # Simula score realista baseado na proporção de aprovação do filme
+        approved_count = sum(filme in row.values for _, row in approved_df.iterrows())
+        total_users = len(approved_df)
+        simulated_score = approved_count / total_users if total_users > 0 else 0
 
-# ----------------- Classe Recomendador -----------------
-class InteractiveRecommender:
-    def __init__(self, usuarios, filmes_df):
-        self.users = usuarios
-        self.filmes_df = filmes_df
+        # Predição baseada no limiar
+        y_pred.append(int(simulated_score >= threshold))
 
-    def get_recommendations_inteligente(self, user_id, top_n=3):
-        filmes_vistos = set(self.users[user_id]["train"])
-        perfil_genero = np.array([self.users[user_id].get(g,0) for g in generos_cols], dtype=float)
-        all_films = list(self.filmes_df['filme'].values)
+    return y_true, y_pred, list(all_filmes)
 
-        scores = {}
-        for filme in all_films:
-            if filme in filmes_vistos:
-                continue
-            genero = self.filmes_df.loc[self.filmes_df['filme']==filme,'genero'].values[0]
-            vec_genero = np.array([1 if g==genero else 0 for g in generos_cols], dtype=float)
-            score = np.dot(perfil_genero, vec_genero)
-            scores[filme] = score
-
-        recs = sorted(scores, key=lambda x: scores[x], reverse=True)[:top_n]
-        return recs
-
-    def recommend_by_knn(self, user_id, top_n=3):
-        return self.get_recommendations_inteligente(user_id, top_n)
-
-    def recommend_by_weights(self, user_id, top_n=3):
-        return self.get_recommendations_inteligente(user_id, top_n)
-
-    def recommend_by_matrix_factorization(self, user_id, top_n=3):
-        return self.get_recommendations_inteligente(user_id, top_n)
-
-# ----------------- Instancia o recomendador -----------------
-recommender = InteractiveRecommender(usuarios, df_filmes)
-
-# ----------------- Função de avaliação combinando todos os métodos -----------------
-def avaliar_recomendador_combinado(recommender, top_n=3):
-    y_true, y_pred = [], []
-
-    for uid, dados in usuarios.items():
-        if not dados["teste"]:
-            continue
-
-        recs_combined = set()
-        recs_combined.update(recommender.get_recommendations_inteligente(uid, top_n=top_n))
-        recs_combined.update(recommender.recommend_by_knn(uid, top_n=top_n))
-        recs_combined.update(recommender.recommend_by_weights(uid, top_n=top_n))
-        recs_combined.update(recommender.recommend_by_matrix_factorization(uid, top_n=top_n))
-
-        for filme in dados["teste"]:
-            y_true.append(1)
-            y_pred.append(1 if filme in recs_combined else 0)
-
-        for filme in recs_combined:
-            if filme not in dados["teste"]:
-                y_true.append(0)
-                y_pred.append(1)
+def evaluate_model_simulated(top_n=5, threshold=0.5):
+    """Avalia o modelo simulado e plota gráficos"""
+    y_true, y_pred, filmes = generate_labels_and_predictions_simulated(top_n, threshold)
 
     cm = confusion_matrix(y_true, y_pred)
-    prec = precision_score(y_true, y_pred, zero_division=0)
-    rec = recall_score(y_true, y_pred, zero_division=0)
+    precision = precision_score(y_true, y_pred, zero_division=0)
+    recall = recall_score(y_true, y_pred, zero_division=0)
     f1 = f1_score(y_true, y_pred, zero_division=0)
-    return y_true, y_pred, cm, prec, rec, f1
 
-# ----------------- Avaliação -----------------
-y_true, y_pred, cm, prec, rec, f1 = avaliar_recomendador_combinado(recommender)
+    print("=== Avaliação Simulada Realista ===")
+    print(f"Filmes positivos (teste): {sum(y_true)}, Filmes negativos (rejeitados): {len(y_true) - sum(y_true)}")
+    print("Matriz de Confusão:\n", cm)
+    print(f"Precisão: {precision:.2f}, Recall: {recall:.2f}, F1-Score: {f1:.2f}")
 
-print("\n=== Avaliação Combinando Todos os Métodos ===")
-print("Matriz de Confusão:\n", cm)
-print(f"Precisão: {prec:.2f}")
-print(f"Recall: {rec:.2f}")
-print(f"F1-Score: {f1:.2f}")
+    # --- Matriz de Confusão ---
+    fig1 = plt.figure(figsize=(6,5))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.title("Matriz de Confusão")
+    plt.xlabel("Predito")
+    plt.ylabel("Verdadeiro")
+    plt.tight_layout()
+    mngr1 = plt.get_current_fig_manager()
+    try:
+        mngr1.window.move(100, 100)  # desloca para esquerda
+    except AttributeError:
+        pass
 
-# ----------------- Gráficos -----------------
+    # --- Métricas ---
+    metrics_df = pd.DataFrame({
+        "Métrica": ["Precisão", "Recall", "F1-Score"],
+        "Valor": [precision, recall, f1]
+    })
+    fig2 = plt.figure(figsize=(6,5))
+    sns.barplot(data=metrics_df, x="Métrica", y="Valor", palette="mako")
+    plt.ylim(0, 1)
+    plt.title("Métricas do Modelo Simulado")
+    plt.tight_layout()
+    mngr2 = plt.get_current_fig_manager()
+    try:
+        mngr2.window.move(750, 100)  # desloca para direita
+    except AttributeError:
+        pass
 
-# 1️⃣ Matriz de confusão
-plt.figure(figsize=(6,5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
-plt.title("Matriz de Confusão")
-plt.xlabel("Previsto")
-plt.ylabel("Real")
-plt.tight_layout()
-plt.show()
+    plt.show()  # Mantém gráficos abertos até você fechar
 
-# 2️⃣ Gráfico de comparação das métricas
-metrics = {"Precisão": prec, "Recall": rec, "F1-Score": f1}
-plt.figure(figsize=(6,5))
-sns.barplot(x=list(metrics.keys()), y=list(metrics.values()), palette="mako")
-plt.ylim(0,1)
-plt.title("Comparativo de Métricas")
-plt.ylabel("Valor")
-plt.tight_layout()
-plt.show()
-
-# 3️⃣ Curva ROC (só pra visual)
-fpr, tpr, _ = roc_curve(y_true, y_pred)
-roc_auc = auc(fpr, tpr)
-plt.figure(figsize=(6,5))
-plt.plot(fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (área = {roc_auc:.2f})")
-plt.plot([0,1], [0,1], color="navy", lw=2, linestyle="--")
-plt.xlabel("Falsos Positivos")
-plt.ylabel("Verdadeiros Positivos")
-plt.title("Curva ROC do Recomendador")
-plt.legend(loc="lower right")
-plt.tight_layout()
-plt.show()
+# --- Executa a simulação ---
+evaluate_model_simulated(top_n=5, threshold=0.2)
