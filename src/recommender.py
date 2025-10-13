@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 import unicodedata
 from sklearn.neighbors import NearestNeighbors
+from inspect import signature
 
 # -------- geralzao --------
 def _normalizar(texto: str) -> str:
@@ -23,8 +24,8 @@ def _cosine_similarity_vec(a: np.ndarray, B: np.ndarray):
     return sims
 
 class InteractiveRecommender:
-    def __init__(self, users_file="D:/Dev/projetos vscode/SuggestAI/data/usuarios_filmes.csv",
-                 movies_file="D:/Dev/projetos vscode/SuggestAI/data/filmes.csv"):
+    def __init__(self, users_file="D:/Dev/Pycharm Projects/SuggestAI/data/usuarios_filmes.csv",
+                 movies_file="D:/Dev/Pycharm Projects/SuggestAI/data/filmes.csv"):
         self.users_file = users_file
         self.movies_file = movies_file
         self.users = {}
@@ -259,6 +260,7 @@ class InteractiveRecommender:
     def get_recommendations(self, user_id: str, top_n: int = 5):
         if user_id not in self.users:
             return []
+
         scores = {}
         recomendadores = [
             self.recommend_by_weights,
@@ -268,15 +270,20 @@ class InteractiveRecommender:
             self.recommend_by_cluster,
             self.recommend_by_popularity
         ]
+
         for metodo in recomendadores:
             try:
-                recs = metodo(user_id, top_n=top_n)
-            except TypeError:
-                recs = metodo(user_id)
+                sig = signature(metodo)
+                kwargs = {}
+                if "top_n" in sig.parameters:
+                    kwargs["top_n"] = top_n
+                recs = metodo(user_id, **kwargs)
+            except Exception:
+                recs = []
+
             for i, f in enumerate(recs):
                 scores[f] = scores.get(f, 0) + (top_n - i)
-        if not scores:
-            return []
+
         sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [f for f, _ in sorted_items[:top_n]]
 
