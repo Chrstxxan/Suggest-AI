@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Modo Manual - SuggestAI</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-4xl font-bold mb-6">🎬 Modo Manual</h1>
+
+    <form method="POST" class="bg-gray-800 p-8 rounded-xl w-2/3 max-w-2xl shadow-lg space-y-4">
+        <label class="block text-lg">Seu nome:</label>
+        <input type="text" name="nome" required class="w-full p-2 rounded text-black">
+
+        <label class="block text-lg">Digite seus filmes e gêneros (máx. 7):</label>
+        <textarea name="entrada" rows="3" required placeholder="Ex: Matrix - ação, Titanic - drama, Avatar - ficção" class="w-full p-2 rounded text-black"></textarea>
+
+        <label class="block text-lg">Quantas recomendações você quer (3 a 7):</label>
+        <input type="number" name="top_n" min="3" max="7" value="5" required class="w-full p-2 rounded text-black">
+
+        {% if erro %}
+            <p class="text-red-400 font-semibold">{{ erro }}</p>
+        {% endif %}
+
+        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xl font-semibold">Gerar Recomendações</button>
+    </form>
+
+    <a href="/" class="mt-6 text-gray-400 hover:text-white">⬅ Voltar</a>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultados - SuggestAI</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+    <div class="bg-gray-800 p-10 rounded-xl shadow-xl w-3/4 max-w-3xl">
+        <h1 class="text-3xl font-bold mb-6 text-center">🎥 Recomendações para {{ nome }}</h1>
+
+        {% if recs %}
+        <form method="POST" action="/feedback" class="space-y-6">
+            <input type="hidden" name="user_id" value="{{ user_id }}">
+            <ul class="space-y-4">
+                {% for filme in recs %}
+                <li class="flex justify-between items-center bg-gray-700 p-4 rounded-lg">
+                    <span class="text-lg">{{ filme }}</span>
+                    <div>
+                        <button name="filme_{{ filme }}" value="s" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg mr-2">👍</button>
+                        <button name="filme_{{ filme }}" value="n" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">👎</button>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            <button type="submit" class="w-full mt-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-xl font-semibold">Salvar Feedback</button>
+        </form>
+        {% else %}
+        <p class="text-gray-300 text-center">Nenhuma recomendação encontrada.</p>
+        {% endif %}
+
+        <div class="text-center mt-6">
+            <a href="/" class="text-gray-400 hover:text-white">⬅ Voltar ao Início</a>
+        </div>
+    </div>
+</body>
+</html>

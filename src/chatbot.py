@@ -4,18 +4,15 @@ import random
 import pandas as pd
 from src.recommender import InteractiveRecommender
 
-# === Normalização básica de texto ===
 def normalizar_texto(txt: str) -> str:
     txt = txt.lower().strip()
     return unicodedata.normalize("NFKD", txt).encode("ASCII", "ignore").decode("utf-8")
 
-# === Dicionário global para armazenar filmes já recomendados nesta execução ===
+#dicionário para armazenar os filmes já recomendados nessa execução
 filmes_recomendados_global = set()
 
-# === Nome do CSV de rejeitados ===
 rejeitados_file = "D:/Dev/PyCharm Projects/SuggestAI/data/usuarios_rejeitados.csv"
 
-# === Interpreta frase do usuário (gostos e aversões) ===
 def interpretar_frase(frase: str, generos_disponiveis):
     frase_norm = normalizar_texto(frase)
     gostos, aversoes = [], []
@@ -45,7 +42,7 @@ def interpretar_frase(frase: str, generos_disponiveis):
                     aversoes.append(genero)
     return gostos, aversoes
 
-# === Gera lista de filmes por gênero ===
+#gera lista de filmes por gênero
 def gerar_filmes_por_genero(gostos, aversoes, movies_map, excluidos=[]):
     filmes = []
     for filme, genero in movies_map.items():
@@ -53,7 +50,6 @@ def gerar_filmes_por_genero(gostos, aversoes, movies_map, excluidos=[]):
             filmes.append(filme)
     return filmes
 
-# === Reforça recomendações com gêneros compatíveis ===
 def reforcar_por_genero(recomendacoes, gostos, movies_map, top_n=5):
     compativeis = [f for f in recomendacoes if movies_map.get(f) in gostos]
     if len(compativeis) >= 3:
@@ -63,7 +59,6 @@ def reforcar_por_genero(recomendacoes, gostos, movies_map, top_n=5):
         return (compativeis + restantes)[:top_n]
     return recomendacoes[:top_n]
 
-# === Função de recomendação misturando gêneros com embaralhamento ===
 def recomendar_filmes_por_genero(generos_usuario, filmes_df, qtd):
     filmes_por_genero = {}
     for genero in generos_usuario:
@@ -90,7 +85,6 @@ def recomendar_filmes_por_genero(generos_usuario, filmes_df, qtd):
     filmes_recomendados_global.update(recomendacoes)
     return recomendacoes
 
-# === Função para registrar filmes rejeitados ===
 import os
 import pandas as pd
 
@@ -127,7 +121,7 @@ def registrar_rejeitados(user_id, nome, filmes_rejeitados):
     except Exception as e:
         print(f"⚠️ Erro ao salvar rejeições: {e}")
 
-# === Função principal do modo Chatbot ===
+#função do chatvot
 def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: int = 3):
     generos = set(recommender.movies.values())
     gostos, aversoes = interpretar_frase(frase, generos)
@@ -241,4 +235,3 @@ def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: 
             return "Você optou por não salvar seus filmes. Nada foi registrado. Obrigado."
     else:
         return "Feedback registrado, mas como menos de 3 filmes foram aprovados, o usuário não foi salvo."
-

@@ -6,7 +6,6 @@ import unicodedata
 from sklearn.neighbors import NearestNeighbors
 from inspect import signature
 
-# -------- geralzao --------
 def _normalizar(texto: str) -> str:
     t = texto.lower().strip()
     return unicodedata.normalize("NFKD", t).encode("ASCII", "ignore").decode("utf-8")
@@ -33,7 +32,6 @@ class InteractiveRecommender:
         self._load_movies()
         self._load_users()
 
-    # ----------------- IO -----------------
     def _load_movies(self):
         if os.path.exists(self.movies_file):
             df = pd.read_csv(self.movies_file)
@@ -110,7 +108,6 @@ class InteractiveRecommender:
         df["genero"] = df["genero"].apply(lambda x: _normalizar(x))
         df.to_csv(self.movies_file, index=False)
 
-    # ----------------- gerenciamento de usuario -----------------
     def add_user_with_genres(self, nome: str, entrada: str) -> str:
         filmes_do_usuario = []
         generos_novos = {}
@@ -141,7 +138,7 @@ class InteractiveRecommender:
         self.save_users()
         return uid
 
-    # ----------------- metofos de recomendacao -----------------
+    #metofos de recomendacao
     def recommend_by_weights(self, user_id: str, top_n: int = 5):
         if user_id not in self.users:
             return []
@@ -256,20 +253,24 @@ class InteractiveRecommender:
         recs = [f for f in counts.index if f not in self.users[user_id]["movies"]][:top_n]
         return recs
 
-    # ----------------- recomendadores unificados para recomendar -----------------
+    #recomendadores unificados para recomendar
     def get_recommendations(self, user_id: str, top_n: int = 15):
         if user_id not in self.users:
             return []
 
         scores = {}
-        recomendadores = [
-            self.recommend_by_weights,
-            self.recommend_by_knn,
-            self.recommend_by_matrix_factorization,
-            self.recommend_by_user_similarity,
-            self.recommend_by_cluster,
-            self.recommend_by_popularity
-        ]
+
+        # Define pesos para cada metodo
+        pesos = {
+            self.recommend_by_weights: 1.0,
+            self.recommend_by_knn: 1.2,
+            self.recommend_by_matrix_factorization: 1.3,
+            self.recommend_by_user_similarity: 1.0,
+            self.recommend_by_cluster: 1.0,
+            self.recommend_by_popularity: 0.8
+        }
+
+        recomendadores = list(pesos.keys())
 
         for metodo in recomendadores:
             try:
@@ -281,13 +282,15 @@ class InteractiveRecommender:
             except Exception:
                 recs = []
 
+            peso = pesos[metodo]
+
             for i, f in enumerate(recs):
-                scores[f] = scores.get(f, 0) + (top_n - i)
+                scores[f] = scores.get(f, 0) + (top_n - i) * peso
 
         sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [f for f, _ in sorted_items[:top_n]]
 
-    # ----------------- feedback do usuario-----------------
+    #feedback do usuario e tal
     def update_weights(self, user_id: str, filme: str, feedback: str):
         if user_id not in self.users:
             return
