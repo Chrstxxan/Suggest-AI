@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # --- Carrega modelo e dados ---
 recommender = InteractiveRecommender(
-    users_file="data/usuarios.csv",
+    users_file="data/usuarios_filmes.csv",
     movies_file="data/filmes.csv"
 )
 
