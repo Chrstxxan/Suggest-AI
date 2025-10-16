@@ -3,6 +3,7 @@ import os
 import random
 import pandas as pd
 from src.recommender import InteractiveRecommender
+import uuid
 
 # =====================
 # Variáveis globais
@@ -245,23 +246,39 @@ def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: 
 def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodada=3, user_id=None):
     """
     Versão do chatbot para web.
-    user_id opcional: permite associar recomendações a um usuário temporário.
+    Agora retorna (recs, user_id): cria um usuário temporário em recommender.users
+    e devolve o user_id para que o formulário de feedback possa persistir alterações.
     """
     generos = set(recommender.movies.values())
     gostos, aversoes = interpretar_frase(frase, generos)
+
+    if not gostos:
+        return ["Não encontrei gêneros válidos para o que você escreveu."], None
 
     aprovados = []
     mostrados = set()
     tentativas = 0
     max_tentativas = 3
 
-    if not gostos:
-        return ["Não encontrei gêneros válidos para o que você escreveu."]
+    # cria um user_id temporário (numérico se possível)
+    # tenta gerar id numérico sequencial para manter formato do CSV
+    try:
+        existing_ids = [int(uid) for uid in recommender.users.keys() if str(uid).isdigit()]
+        new_id = str(max(existing_ids) + 1) if existing_ids else "1"
+    except Exception:
+        # fallback random id
+        new_id = f"temp_{uuid.uuid4().hex[:8]}"
 
-    # Usuário temporário ou existente
-    temp_user = recommender.users.get(user_id, {"movies": [], "preferences": {g: 1.0 for g in generos}})
+    # cria usuário temporário em memória (não grava no CSV ainda)
+    temp_user = {
+        "nome": nome or "",
+        "movies": [],
+        "preferences": {g: (1.0 if g in gostos else 0.0) for g in generos}
+    }
+    recommender.users[new_id] = temp_user
 
-    while len(aprovados) < 3 and tentativas < max_tentativas:
+    # gera recomendações balanceadas por gênero (até coletar top_n)
+    while len(aprovados) < top_n and tentativas < max_tentativas:
         tentativas += 1
         filmes_por_genero = {
             g: [f for f, gen in recommender.movies.items() if gen == g and gen not in aversoes and f not in mostrados]
@@ -283,17 +300,17 @@ def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodad
         random.shuffle(filmes_equilibrados)
         recs_filtradas = reforcar_por_genero(filmes_equilibrados, gostos, recommender.movies, top_n=quantos_por_rodada)
 
-        aprovados.extend(recs_filtradas)
-        mostrados.update(recs_filtradas)
-
-        # Atualiza usuário temporário com filmes mostrados
-        temp_user["movies"].extend(recs_filtradas)
+        # adiciona sem duplicar
+        for r in recs_filtradas:
+            if r not in aprovados:
+                aprovados.append(r)
+            mostrados.add(r)
+        # atualiza temp_user (em memória) com os filmes mostrados
+        temp_user["movies"].extend([r for r in recs_filtradas if r not in temp_user["movies"]])
         for f in recs_filtradas:
             gen = recommender.movies.get(f)
-            temp_user["preferences"][gen] = temp_user["preferences"].get(gen, 0.0) + 0.1
+            if gen:
+                temp_user["preferences"][gen] = temp_user["preferences"].get(gen, 0.0) + 0.1
 
-    # Salva no recommender se user_id fornecido
-    if user_id:
-        recommender.users[user_id] = temp_user
-
-    return aprovados[:top_n]
+    # devolve a lista de recomendações e o user_id temporário (string)
+    return aprovados[:top_n], new_id

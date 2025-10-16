@@ -4,26 +4,74 @@
     <meta charset="UTF-8">
     <title>Resultados - SuggestAI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+
+    <script>
+        // Marca o feedback (like/dislike) visualmente e armazena no input hidden
+        function marcarFeedback(filme, valor) {
+            const input = document.getElementById("input_" + filme);
+            const btnLike = document.getElementById("btn_like_" + filme);
+            const btnDislike = document.getElementById("btn_dislike_" + filme);
+
+            // Define o valor do feedback
+            input.value = valor;
+
+            // Reseta estilos visuais
+            btnLike.classList.remove("bg-blue-800", "ring-4", "ring-blue-400", "scale-105");
+            btnDislike.classList.remove("bg-red-800", "ring-4", "ring-red-400", "scale-105");
+
+            // Aplica destaque visual conforme a escolha
+            if (valor === "s") {
+                btnLike.classList.add("bg-blue-800", "ring-4", "ring-blue-400", "scale-105");
+            } else if (valor === "n") {
+                btnDislike.classList.add("bg-red-800", "ring-4", "ring-red-400", "scale-105");
+            }
+        }
+    </script>
 </head>
+
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+
     <div class="bg-gray-800 p-10 rounded-xl shadow-xl w-3/4 max-w-3xl">
         <h1 class="text-3xl font-bold mb-6 text-center">🎥 Recomendações para {{ nome }}</h1>
 
         {% if recs %}
         <form method="POST" action="/feedback" class="space-y-6">
             <input type="hidden" name="user_id" value="{{ user_id }}">
+            <input type="hidden" name="nome" value="{{ nome }}">
+            <input type="hidden" name="salvar" value="{{ salvar }}">
+
             <ul class="space-y-4">
                 {% for filme in recs %}
-                <li class="flex justify-between items-center bg-gray-700 p-4 rounded-lg">
-                    <span class="text-lg">{{ filme }}</span>
-                    <div>
-                        <button name="filme_{{ filme }}" value="s" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg mr-2">👍</button>
-                        <button name="filme_{{ filme }}" value="n" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">👎</button>
+                <li class="flex justify-between items-center bg-gray-700 p-4 rounded-lg transition transform hover:scale-[1.01]">
+                    <span class="text-lg font-medium">{{ filme }}</span>
+                    <div class="flex space-x-2">
+                        <!-- Campo oculto pra guardar o feedback -->
+                        <input type="hidden" id="input_{{ filme }}" name="filme_{{ filme }}" value="">
+
+                        <!-- Botão de like -->
+                        <button type="button"
+                                id="btn_like_{{ filme }}"
+                                onclick="marcarFeedback('{{ filme }}', 's')"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-transform">
+                            👍
+                        </button>
+
+                        <!-- Botão de dislike -->
+                        <button type="button"
+                                id="btn_dislike_{{ filme }}"
+                                onclick="marcarFeedback('{{ filme }}', 'n')"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-transform">
+                            👎
+                        </button>
                     </div>
                 </li>
                 {% endfor %}
             </ul>
-            <button type="submit" class="w-full mt-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-xl font-semibold">Salvar Feedback</button>
+
+            <button type="submit"
+                    class="w-full mt-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-xl font-semibold transition-colors">
+                💾 Salvar Feedback
+            </button>
         </form>
         {% else %}
         <p class="text-gray-300 text-center">Nenhuma recomendação encontrada.</p>
@@ -33,5 +81,6 @@
             <a href="/" class="text-gray-400 hover:text-white">⬅ Voltar ao Início</a>
         </div>
     </div>
+
 </body>
 </html>
