@@ -23,6 +23,7 @@ O SuggestAI propõe resolver essa dor recomendando filmes com base nas preferên
 
 O sistema busca oferecer recomendações personalizadas e um processo interativo de feedback, onde o usuário informa se gostou ou não dos filmes sugeridos —
 e o modelo aprende progressivamente com essas respostas.
+
 ---
 
 ## Abordagem de IA:
