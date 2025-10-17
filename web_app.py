@@ -6,13 +6,12 @@ import threading
 
 app = Flask(__name__)
 
-# --- Carrega modelo e dados ---
 recommender = InteractiveRecommender(
     users_file="data/usuarios_filmes.csv",
     movies_file="data/filmes.csv"
 )
 
-# --- Abre navegador automaticamente ---
+# abrindo navegador automaticamente
 def abrir_navegador():
     webbrowser.open("http://127.0.0.1:5000")
 
@@ -20,7 +19,7 @@ def abrir_navegador():
 def index():
     return render_template("index.html")
 
-# --- Modo Manual ---
+# modo manual
 @app.route("/manual", methods=["GET", "POST"])
 def manual():
     if request.method == "POST":
@@ -31,28 +30,22 @@ def manual():
 
         try:
             if salvar == "s":
-                # Salva usuário na base e recomenda
                 user_id = recommender.add_user_with_genres(nome, entrada)
                 recs = recommender.get_recommendations(user_id, top_n)
                 return render_template("result.html", nome=nome, recs=recs, modo="manual", user_id=user_id, salvar=salvar)
             else:
-                # Não salva nada, só gera recomendações temporárias
                 user_id = "temp_manual"
 
-                # Simula recomendações temporárias sem salvar o usuário
                 try:
-                    # Cria um usuário fake apenas na memória, sem escrever no CSV
                     temp_id = "temp_" + nome.replace(" ", "_").lower()
                     recommender.users[temp_id] = {"nome": nome, "movies": []}
 
-                    # Extrai gêneros dos filmes digitados
                     generos_usuario = []
                     for par in entrada.split(","):
                         partes = par.strip().split("-")
                         if len(partes) == 2:
                             generos_usuario.append(partes[1].strip().lower())
 
-                    # Filtra filmes compatíveis com esses gêneros
                     recs = [
                         f for f, g in recommender.movies.items()
                         if any(gen in g.lower() for gen in generos_usuario)
@@ -68,7 +61,7 @@ def manual():
 
     return render_template("manual.html")
 
-# --- Modo Chatbot ---
+# modo chatbot
 @app.route("/chat", methods=["GET", "POST"])
 def chat():
     if request.method == "POST":
@@ -77,7 +70,6 @@ def chat():
         top_n = int(request.form.get("top_n", 3))
         salvar = request.form.get("salvar", "n").lower()
 
-        # Gera recomendações + user_id
         recs, user_id = recomendar_por_chat_web(
             frase=frase,
             nome=nome,
@@ -86,7 +78,6 @@ def chat():
             quantos_por_rodada=top_n
         )
 
-        # Se o usuário NÃO quiser salvar, marcaremos como temporário
         if salvar != "s":
             user_id = f"temp_{user_id}"
 
@@ -101,7 +92,7 @@ def chat():
 
     return render_template("chat.html")
 
-# --- Feedback ---
+# feedback
 @app.route("/feedback", methods=["POST"])
 def feedback():
     user_id = request.form.get("user_id")
@@ -111,7 +102,6 @@ def feedback():
 
     print(f"[debug feedback] user_id={user_id}, salvar={salvar}")
 
-    # Percorre feedbacks
     for key, fb in request.form.items():
         if key in ["user_id", "nome", "salvar"]:
             continue
@@ -120,7 +110,6 @@ def feedback():
             if fb == "n":
                 filmes_rejeitados.append(filme)
 
-            # Salva nas notas apenas se o user foi salvo na base
             if salvar == "s" and user_id and not user_id.startswith("temp_"):
                 try:
                     recommender.update_weights(user_id, filme, fb)
@@ -128,7 +117,6 @@ def feedback():
                 except Exception as e:
                     print(f"[feedback] Erro ao atualizar {filme}: {e}")
 
-    # Salva rejeitados apenas se o user for da base
     if salvar == "s" and filmes_rejeitados:
         try:
             registrar_rejeitados(user_id, nome, filmes_rejeitados)

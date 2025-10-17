@@ -253,14 +253,14 @@ class InteractiveRecommender:
         recs = [f for f in counts.index if f not in self.users[user_id]["movies"]][:top_n]
         return recs
 
-    #recomendadores unificados para recomendar
+    #juntanfo tufo
     def get_recommendations(self, user_id: str, top_n: int = 15):
         if user_id not in self.users:
             return []
 
         scores = {}
 
-        # Define pesos para cada metodo
+        # definicao dr pesos pra cada metodo
         pesos = {
             self.recommend_by_weights: 1.0,
             self.recommend_by_knn: 1.2,

@@ -8,11 +8,9 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from src.recommender import InteractiveRecommender
 
-# === Caminhos fixos ===
 APPROVED_FILE = r"D:\Dev\PyCharm Projects\SuggestAI\data\usuarios_filmes.csv"
 REJECTED_FILE = r"D:\Dev\PyCharm Projects\SuggestAI\data\usuarios_rejeitados.csv"
 MOVIES_FILE = r"D:\Dev\PyCharm Projects\SuggestAI\data\filmes.csv"
-
 
 def evaluate_real_model(top_n=5):
     model = InteractiveRecommender(
@@ -25,17 +23,17 @@ def evaluate_real_model(top_n=5):
 
     y_true, y_pred = [], []
 
-    # Avalia por usuário
+    # avaliacao por usuario
     for _, row in approved_df.iterrows():
         user_id = str(row["user_id"])
         user_movies = set(row.dropna().tolist()[2:])
         if not user_movies:
             continue
 
-        # divide filmes do usuário em treino e teste
+        # divisao entre treino e teste
         train_movies, test_movies = train_test_split(list(user_movies), test_size=0.4, random_state=42)
 
-        # simula treino (modelo aprende com os filmes de treino)
+        # simulacao treino
         model.users[user_id] = {"movies": train_movies}
 
         # rejeitados (negativos)
@@ -45,7 +43,7 @@ def evaluate_real_model(top_n=5):
                 rejected_df[rejected_df["user_id"] == int(user_id)].dropna(axis=1).iloc[0, 2:].values
             )
 
-        # recomendações com base no que ele aprendeu
+        # recomendacpes com base no que ele aprendeu
         recs = set(model.get_recommendations(user_id, top_n=top_n))
 
         # positivos (filmes de teste)
@@ -58,7 +56,7 @@ def evaluate_real_model(top_n=5):
             y_true.append(0)
             y_pred.append(1 if filme in recs else 0)
 
-    # --- Métricas ---
+    # metricas
     cm = confusion_matrix(y_true, y_pred)
     precision = precision_score(y_true, y_pred, zero_division=0)
     recall = recall_score(y_true, y_pred, zero_division=0)
@@ -69,22 +67,22 @@ def evaluate_real_model(top_n=5):
     print("Matriz de Confusão:\n", cm)
     print(f"Precisão: {precision:.2f}, Recall: {recall:.2f}, F1-Score: {f1:.2f}")
 
-    # --- Curvas ROC e PR ---
+    # ROC e PR
     fpr, tpr, _ = roc_curve(y_true, y_pred)
     roc_auc = auc(fpr, tpr)
     precision_vals, recall_vals, _ = precision_recall_curve(y_true, y_pred)
     pr_auc = auc(recall_vals, precision_vals)
 
-    # --- Visualização (4 subplots organizados) ---
+    # plotagem dos sublots
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
-    # 1️⃣ Matriz de Confusão
+    # matirz
     sns.heatmap(cm, annot=True, fmt="d", cmap="Purples", ax=axes[0, 0])
     axes[0, 0].set_title("Matriz de Confusão (Modelo Real)")
     axes[0, 0].set_xlabel("Predito")
     axes[0, 0].set_ylabel("Verdadeiro")
 
-    # 2️⃣ Métricas
+    # subplots das metricas
     metrics_df = pd.DataFrame({
         "Métrica": ["Precisão", "Recall", "F1-Score"],
         "Valor": [precision, recall, f1]
@@ -93,14 +91,14 @@ def evaluate_real_model(top_n=5):
     axes[0, 1].set_ylim(0, 1)
     axes[0, 1].set_title("Métricas do Modelo")
 
-    # 3️⃣ Distribuição das Predições
+    # distribuicoes de predicoes
     sns.histplot(y_pred, bins=3, kde=False, ax=axes[1, 0], color="mediumpurple")
     axes[1, 0].set_xticks([0, 1])
     axes[1, 0].set_xlabel("Classe Prevista (0 = Negativo, 1 = Positivo)")
     axes[1, 0].set_ylabel("Contagem")
     axes[1, 0].set_title("Distribuição das Predições")
 
-    # 4️⃣ Curvas ROC e Precision-Recall
+    # ROC e Precision-Recall
     axes[1, 1].plot(fpr, tpr, label=f"ROC (AUC = {roc_auc:.2f})", color="darkorchid")
     axes[1, 1].plot(recall_vals, precision_vals, label=f"PR (AUC = {pr_auc:.2f})", color="mediumvioletred")
     axes[1, 1].set_title("Curvas ROC e Precision-Recall")

@@ -18,14 +18,12 @@
         <label class="block text-lg">Quantas recomendações (3 a 7):</label>
         <input type="number" name="top_n" min="3" max="7" value="3" required class="w-full p-2 rounded text-black">
 
-        <!-- 🔥 Campo novo: deseja salvar feedback -->
         <label class="block text-lg">Deseja salvar seu feedback para ajudar o nosso modelo a melhorar?</label>
         <select name="salvar" class="w-full p-2 rounded text-black">
             <option value="s">Sim, salvar</option>
             <option value="n" selected>Não salvar</option>
         </select>
 
-        <!-- 🔥 Botão de envio -->
         <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg text-xl font-semibold">
             Gerar Recomendações
         </button>
@@ -33,7 +31,7 @@
 
     <a href="/" class="mt-6 text-gray-400 hover:text-white">⬅ Voltar</a>
 
-    <!-- 🔥 Script opcional pra UX -->
+    <!-- script opcional pra UX -->
     <script>
         document.querySelector('form').addEventListener('submit', function() {
             const btn = this.querySelector('button[type="submit"]');

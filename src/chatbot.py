@@ -5,20 +5,12 @@ import pandas as pd
 from src.recommender import InteractiveRecommender
 import uuid
 
-# =====================
-# Variáveis globais
-# =====================
 filmes_recomendados_global = set()
 rejeitados_file = "D:/Dev/PyCharm Projects/SuggestAI/data/usuarios_rejeitados.csv"
 
-
-# =====================
-# Funções auxiliares
-# =====================
 def normalizar_texto(txt: str) -> str:
     txt = txt.lower().strip()
     return unicodedata.normalize("NFKD", txt).encode("ASCII", "ignore").decode("utf-8")
-
 
 def interpretar_frase(frase: str, generos_disponiveis):
     frase_norm = normalizar_texto(frase)
@@ -49,7 +41,6 @@ def interpretar_frase(frase: str, generos_disponiveis):
                     aversoes.append(genero)
     return gostos, aversoes
 
-
 def registrar_rejeitados(user_id, nome, filmes_rejeitados):
     if not filmes_rejeitados:
         return
@@ -69,19 +60,14 @@ def registrar_rejeitados(user_id, nome, filmes_rejeitados):
         df = pd.concat([df, pd.DataFrame([linha])], ignore_index=True)
         df.to_csv(rejeitados_file, index=False, encoding="utf-8")
     except Exception as e:
-        print(f"⚠️ Erro ao salvar rejeições: {e}")
+        print(f"Erro ao salvar rejeições: {e}")
 
-
-# =====================
-# Funções do terminal
-# =====================
 def gerar_filmes_por_genero(gostos, aversoes, movies_map, excluidos=[]):
     filmes = []
     for filme, genero in movies_map.items():
         if genero in gostos and genero not in aversoes and filme not in excluidos:
             filmes.append(filme)
     return filmes
-
 
 def reforcar_por_genero(recomendacoes, gostos, movies_map, top_n=5):
     compativeis = [f for f in recomendacoes if movies_map.get(f) in gostos]
@@ -91,7 +77,6 @@ def reforcar_por_genero(recomendacoes, gostos, movies_map, top_n=5):
         restantes = [f for f in recomendacoes if f not in compativeis]
         return (compativeis + restantes)[:top_n]
     return recomendacoes[:top_n]
-
 
 def recomendar_filmes_por_genero(generos_usuario, filmes_df, qtd):
     filmes_por_genero = {}
@@ -118,7 +103,6 @@ def recomendar_filmes_por_genero(generos_usuario, filmes_df, qtd):
     random.shuffle(recomendacoes)
     filmes_recomendados_global.update(recomendacoes)
     return recomendacoes
-
 
 def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: int = 3):
     generos = set(recommender.movies.values())
@@ -239,16 +223,7 @@ def recomendar_por_chat(frase: str, recommender: InteractiveRecommender, top_n: 
     else:
         return "Feedback registrado, mas como menos de 3 filmes foram aprovados, o usuário não foi salvo."
 
-
-# =====================
-# Função adicional para web
-# =====================
 def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodada=3, user_id=None):
-    """
-    Versão do chatbot para web.
-    Agora retorna (recs, user_id): cria um usuário temporário em recommender.users
-    e devolve o user_id para que o formulário de feedback possa persistir alterações.
-    """
     generos = set(recommender.movies.values())
     gostos, aversoes = interpretar_frase(frase, generos)
 
@@ -260,8 +235,6 @@ def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodad
     tentativas = 0
     max_tentativas = 3
 
-    # cria um user_id temporário (numérico se possível)
-    # tenta gerar id numérico sequencial para manter formato do CSV
     try:
         existing_ids = [int(uid) for uid in recommender.users.keys() if str(uid).isdigit()]
         new_id = str(max(existing_ids) + 1) if existing_ids else "1"
@@ -269,7 +242,6 @@ def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodad
         # fallback random id
         new_id = f"temp_{uuid.uuid4().hex[:8]}"
 
-    # cria usuário temporário em memória (não grava no CSV ainda)
     temp_user = {
         "nome": nome or "",
         "movies": [],
@@ -277,7 +249,6 @@ def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodad
     }
     recommender.users[new_id] = temp_user
 
-    # gera recomendações balanceadas por gênero (até coletar top_n)
     while len(aprovados) < top_n and tentativas < max_tentativas:
         tentativas += 1
         filmes_por_genero = {
@@ -300,17 +271,14 @@ def recomendar_por_chat_web(frase, nome, recommender, top_n=3, quantos_por_rodad
         random.shuffle(filmes_equilibrados)
         recs_filtradas = reforcar_por_genero(filmes_equilibrados, gostos, recommender.movies, top_n=quantos_por_rodada)
 
-        # adiciona sem duplicar
         for r in recs_filtradas:
             if r not in aprovados:
                 aprovados.append(r)
             mostrados.add(r)
-        # atualiza temp_user (em memória) com os filmes mostrados
         temp_user["movies"].extend([r for r in recs_filtradas if r not in temp_user["movies"]])
         for f in recs_filtradas:
             gen = recommender.movies.get(f)
             if gen:
                 temp_user["preferences"][gen] = temp_user["preferences"].get(gen, 0.0) + 0.1
 
-    # devolve a lista de recomendações e o user_id temporário (string)
     return aprovados[:top_n], new_id

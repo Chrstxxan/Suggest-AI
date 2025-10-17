@@ -61,7 +61,6 @@ def main():
                         if fb == "n":
                             filmes_rejeitados.append(f)
 
-                    # Salva os rejeitados no CSV
                     if filmes_rejeitados:
                         registrar_rejeitados(uid, nome, filmes_rejeitados)
 
