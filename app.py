@@ -49,7 +49,6 @@ def main():
                     print(f"\nRecomendações pra você: {', '.join(recs)}")
 
                     filmes_rejeitados = []
-                    # ✅ Coleta feedback e registra rejeitados
                     for f in recs:
                         while True:
                             fb = input(
